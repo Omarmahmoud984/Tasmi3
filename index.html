@@ -233,9 +233,9 @@ header {
 .aya-end {
   display: inline-block;
   font-family: 'Scheherazade New', serif;
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   color: var(--gold);
-  opacity: 0.4;
+  opacity: 0.5;
   margin-right: 4px;
   transition: opacity 0.2s, transform 0.15s;
 }
@@ -244,26 +244,7 @@ header {
   transform: scale(1.2);
 }
 
-/* ═══ HINT ═══ */
-.hint {
-  position: fixed;
-  bottom: 110px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(212,168,83,0.1);
-  border: 1px solid var(--gold-line);
-  color: var(--gold);
-  font-size: 0.78rem;
-  padding: 8px 22px;
-  border-radius: 30px;
-  opacity: 1;
-  transition: opacity 0.6s;
-  pointer-events: none;
-  white-space: nowrap;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.hint.gone { opacity: 0; }
+
 
 /* ═══ BOTTOM BAR ═══ */
 .bottom-bar {
@@ -274,12 +255,30 @@ header {
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--gold-line);
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Row 1: stats + reveal ayah + reveal all + reset */
+.bar-row1 {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 12px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-  flex-wrap: wrap;
+  padding: 9px 12px 7px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Row 2: n-words group (full width center) */
+.bar-row2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 12px 9px;
 }
 
 .stats-group {
@@ -289,12 +288,13 @@ header {
   background: var(--surface);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 10px;
-  padding: 7px 14px;
+  padding: 6px 12px;
+  flex-shrink: 0;
 }
 .stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.stat-num  { font-size: 1rem; font-weight: 700; color: var(--gold); line-height: 1; }
-.stat-label{ font-size: 0.58rem; color: var(--text3); letter-spacing: 0.5px; }
-.divider { width: 1px; height: 24px; background: rgba(255,255,255,0.07); }
+.stat-num  { font-size: 0.95rem; font-weight: 700; color: var(--gold); line-height: 1; }
+.stat-label{ font-size: 0.56rem; color: var(--text3); letter-spacing: 0.5px; }
+.divider { width: 1px; height: 22px; background: rgba(255,255,255,0.07); }
 
 .nwords-group {
   display: flex;
@@ -325,7 +325,7 @@ header {
   background: linear-gradient(135deg, #1a3a5c 0%, #0e2240 100%);
   border: none;
   color: #7ab8ff;
-  padding: 9px 12px;
+  padding: 9px 16px;
   font-family: 'Cairo', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
@@ -341,7 +341,7 @@ header {
   background: var(--surface);
   border: 1px solid rgba(255,255,255,0.08);
   color: var(--text2);
-  padding: 9px 14px;
+  padding: 8px 13px;
   border-radius: 10px;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
@@ -349,6 +349,7 @@ header {
   font-weight: 600;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 .btn-reset:hover  { border-color: rgba(255,100,100,0.3); color: #ff8888; }
 .btn-reset:active { transform: scale(0.97); }
@@ -357,7 +358,7 @@ header {
   background: linear-gradient(135deg, #1a3a5c 0%, #0e2240 100%);
   border: 1px solid rgba(74,144,217,0.3);
   color: #7ab8ff;
-  padding: 9px 16px;
+  padding: 8px 13px;
   border-radius: 10px;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
@@ -365,6 +366,7 @@ header {
   font-weight: 700;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
 }
 .btn-reveal-ayah:hover  { background: linear-gradient(135deg, #1e4a7a, #1a3a5c); transform: translateY(-1px); }
 .btn-reveal-ayah:active { transform: scale(0.97); }
@@ -373,7 +375,7 @@ header {
   background: linear-gradient(135deg, #1e4d38 0%, #152e22 100%);
   border: 1px solid rgba(212,168,83,0.25);
   color: var(--gold);
-  padding: 9px 16px;
+  padding: 8px 13px;
   border-radius: 10px;
   cursor: pointer;
   font-family: 'Cairo', sans-serif;
@@ -381,6 +383,7 @@ header {
   font-weight: 700;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
 }
 .btn-reveal-all:hover  { background: linear-gradient(135deg, #2a6b4f, #1e4d38); transform: translateY(-1px); }
 .btn-reveal-all:active { transform: scale(0.97); }
@@ -446,16 +449,34 @@ header {
   text-transform: uppercase;
   margin-bottom: 24px;
 }
-.overlay-sub {
-  font-size: 0.9rem;
-  color: var(--text2);
-  line-height: 2;
+.tutorial-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   margin-bottom: 32px;
+  text-align: right;
 }
-.overlay-sub span {
+.tut-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,168,83,0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.tut-icon {
+  font-family: 'Scheherazade New', serif;
+  font-size: 1.2rem;
   color: var(--gold);
-  font-weight: 600;
+  min-width: 24px;
+  text-align: center;
+  margin-top: 1px;
 }
+.tut-step b { color: var(--gold2); font-weight: 600; }
 .overlay-btn {
   background: linear-gradient(135deg, var(--gold) 0%, #9a7a30 100%);
   color: #08080a;
@@ -474,23 +495,90 @@ header {
 .overlay-btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,168,83,0.4); }
 .overlay-btn:active { transform: scale(0.98); }
 
+/* ═══ NEXT SURAH CARD ═══ */
+.next-surah-card {
+  width: 100%;
+  margin-top: 32px;
+  margin-bottom: 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gold-line);
+  background: linear-gradient(160deg, rgba(212,168,83,0.06) 0%, rgba(13,17,23,0.8) 100%);
+  padding: 28px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: slideIn 0.6s ease 0.2s forwards;
+}
+
+.next-surah-label {
+  font-size: 0.7rem;
+  color: var(--text3);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.next-surah-name {
+  font-family: 'Scheherazade New', serif;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(212,168,83,0.25);
+  line-height: 1.2;
+}
+
+.btn-next-surah {
+  background: linear-gradient(135deg, var(--gold) 0%, #9a7a30 100%);
+  color: #08080a;
+  border: none;
+  padding: 13px 36px;
+  border-radius: 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 20px rgba(212,168,83,0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-next-surah:hover  { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,168,83,0.4); }
+.btn-next-surah:active { transform: scale(0.97); }
+.btn-next-surah .arrow { font-size: 1.1rem; }
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 480px) {
   header { padding: 10px 14px; gap: 8px; }
   .logo  { font-size: 1.2rem; }
   .surah-select { font-size: 0.82rem; padding: 8px 10px; }
-  .page-container { padding: 20px 12px 160px; }
+  .page-container { padding: 20px 12px 180px; }
   .ayah-block { padding: 16px 12px 14px; }
-  .bottom-bar { gap: 6px; padding: 8px 8px; }
+  .bar-row1 { gap: 6px; padding: 8px 10px 6px; }
+  .bar-row2 { padding: 6px 10px 8px; }
   .btn-reset, .btn-reveal-ayah, .btn-reveal-all { padding: 8px 10px; font-size: 0.75rem; }
-  .stats-group { padding: 6px 10px; }
-  .stat-num { font-size: 0.9rem; }
+  .stats-group { padding: 5px 9px; }
+  .stat-num { font-size: 0.85rem; }
   .progress-wrap { display: none; }
 }
 
-@media (max-width: 360px) {
-  .bottom-bar { flex-wrap: wrap; }
-  .btn-reveal-ayah, .btn-reveal-all { flex: 1; }
+@media (min-width: 640px) {
+  /* Desktop/tablet: single row layout */
+  .bottom-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .bar-row1, .bar-row2 {
+    display: contents; /* flatten children into parent flex */
+  }
 }
 </style>
 </head>
@@ -499,13 +587,30 @@ header {
 <!-- Intro Overlay -->
 <div class="overlay" id="overlay">
   <div class="overlay-card">
-    <div class="overlay-title">القرآن الكريم</div>
+    <div class="overlay-title">تسميع</div>
     <div class="overlay-subtitle">Quran Memorization</div>
-    <p class="overlay-sub">
-      الصفحة <span>فاضية تماماً</span><br>
-      دوس على أي كلمة عشان تظهر<br>
-      الكلمة اللي تكشفها تفضل ظاهرة ✦
-    </p>
+    <div class="tutorial-steps">
+      <div class="tut-step">
+        <span class="tut-icon">👆</span>
+        <span>دوس على أي كلمة عشان تظهر — الكلمة اللي تكشفها تفضل ظاهرة</span>
+      </div>
+      <div class="tut-step">
+        <span class="tut-icon">۝</span>
+        <span>دوس على علامة الآية عشان تكشف الآية كلها دفعة واحدة</span>
+      </div>
+      <div class="tut-step">
+        <span class="tut-icon">📖</span>
+        <span>زر <b>إظهار الآية</b> بيكشف الآيات واحدة واحدة بالترتيب</span>
+      </div>
+      <div class="tut-step">
+        <span class="tut-icon">↺</span>
+        <span>زر الريست بيرجع السورة فاضية من الأول</span>
+      </div>
+      <div class="tut-step">
+        <span class="tut-icon">٢</span>
+        <span>زر <b>كشف ٢ كلمة</b> بيكشف عدد معين من الكلمات بالترتيب — غيّر الرقم من ١ لـ ٥ على حسب احتياجك</span>
+      </div>
+    </div>
     <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
   </div>
 </div>
@@ -515,29 +620,43 @@ header {
   <div class="logo">Quran ✦</div>
   <select class="surah-select" id="surahSelect" onchange="loadSurah(this.value)">
     <option value="1">الفاتحة</option>
+    <option value="78">النبأ</option>
+    <option value="79">النازعات</option>
+    <option value="80">عبس</option>
+    <option value="81">التكوير</option>
+    <option value="82">الانفطار</option>
+    <option value="83">المطففين</option>
+    <option value="84">الانشقاق</option>
+    <option value="85">البروج</option>
+    <option value="86">الطارق</option>
+    <option value="87">الأعلى</option>
+    <option value="88">الغاشية</option>
+    <option value="89">الفجر</option>
+    <option value="90">البلد</option>
+    <option value="91">الشمس</option>
+    <option value="92">الليل</option>
+    <option value="93">الضحى</option>
+    <option value="94">الشرح</option>
+    <option value="95">التين</option>
+    <option value="96">العلق</option>
+    <option value="97">القدر</option>
+    <option value="98">البينة</option>
+    <option value="99">الزلزلة</option>
+    <option value="100">العاديات</option>
+    <option value="101">القارعة</option>
+    <option value="102">التكاثر</option>
+    <option value="103">العصر</option>
+    <option value="104">الهمزة</option>
+    <option value="105">الفيل</option>
+    <option value="106">قريش</option>
+    <option value="107">الماعون</option>
+    <option value="108">الكوثر</option>
+    <option value="109">الكافرون</option>
+    <option value="110">النصر</option>
+    <option value="111">المسد</option>
     <option value="112">الإخلاص</option>
     <option value="113">الفلق</option>
     <option value="114">الناس</option>
-    <option value="110">النصر</option>
-    <option value="108">الكوثر</option>
-    <option value="107">الماعون</option>
-    <option value="106">قريش</option>
-    <option value="105">الفيل</option>
-    <option value="104">الهمزة</option>
-    <option value="103">العصر</option>
-    <option value="102">التكاثر</option>
-    <option value="101">القارعة</option>
-    <option value="100">العاديات</option>
-    <option value="99">الزلزلة</option>
-    <option value="98">البينة</option>
-    <option value="97">القدر</option>
-    <option value="96">العلق</option>
-    <option value="95">التين</option>
-    <option value="94">الشرح</option>
-    <option value="93">الضحى</option>
-    <option value="92">الليل</option>
-    <option value="91">الشمس</option>
-    <option value="90">البلد</option>
   </select>
   <div class="progress-wrap">
     <div class="progress-pct" id="statPct">0%</div>
@@ -555,35 +674,38 @@ header {
   <div id="ayahsContainer"></div>
 </div>
 
-<!-- Hint -->
-<div class="hint" id="hint">دوس على الكلمة عشان تظهر 👆</div>
+
 
 <!-- Bottom Bar -->
 <div class="bottom-bar">
-  <div class="stats-group">
-    <div class="stat">
-      <div class="stat-num" id="statRevealed">0</div>
-      <div class="stat-label">كُشف</div>
+  <div class="bar-row1">
+    <div class="stats-group">
+      <div class="stat">
+        <div class="stat-num" id="statRevealed">0</div>
+        <div class="stat-label">كُشف</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">كلمة</div>
+      </div>
     </div>
-    <div class="divider"></div>
-    <div class="stat">
-      <div class="stat-num" id="statTotal">0</div>
-      <div class="stat-label">كلمة</div>
+    <button class="btn-reveal-ayah" id="btnRevealAyah" onclick="revealNextAyah()">إظهار الآية <span id="nextAyahNum">١</span></button>
+    <button class="btn-reveal-all" onclick="revealAll()">اكشف الكل</button>
+    <button class="btn-reset" onclick="resetSurah()">↺</button>
+  </div>
+  <div class="bar-row2">
+    <div class="nwords-group">
+      <select class="nwords-select" id="nWordsSelect" onchange="updateNBtn()">
+        <option value="1">١</option>
+        <option value="2" selected>٢</option>
+        <option value="3">٣</option>
+        <option value="4">٤</option>
+        <option value="5">٥</option>
+      </select>
+      <button class="btn-reveal-n" id="btnRevealN" onclick="revealNWords()">كشف ٢ كلمة</button>
     </div>
   </div>
-  <button class="btn-reveal-ayah" id="btnRevealAyah" onclick="revealNextAyah()">إظهار الآية <span id="nextAyahNum">١</span></button>
-  <div class="nwords-group">
-    <select class="nwords-select" id="nWordsSelect" onchange="updateNBtn()">
-      <option value="1">١</option>
-      <option value="2" selected>٢</option>
-      <option value="3">٣</option>
-      <option value="4">٤</option>
-      <option value="5">٥</option>
-    </select>
-    <button class="btn-reveal-n" id="btnRevealN" onclick="revealNWords()">كشف ٢ كلمة</button>
-  </div>
-  <button class="btn-reset" onclick="resetSurah()">↺</button>
-  <button class="btn-reveal-all" onclick="revealAll()">اكشف الكل</button>
 </div>
 
 <script>
@@ -914,6 +1036,418 @@ const SURAHS = {
       'وَلَا يَخَافُ عُقْبَـٰهَا'
     ]
   },
+  89: {
+    name: 'الفجر',
+    ayahs: [
+      'وَٱلْفَجْرِ',
+      'وَلَيَالٍ عَشْرٍ',
+      'وَٱلشَّفْعِ وَٱلْوَتْرِ',
+      'وَٱلَّيْلِ إِذَا يَسْرِ',
+      'هَلْ فِى ذَٰلِكَ قَسَمٌ لِّذِى حِجْرٍ',
+      'أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِعَادٍ',
+      'إِرَمَ ذَاتِ ٱلْعِمَادِ',
+      'ٱلَّتِى لَمْ يُخْلَقْ مِثْلُهَا فِى ٱلْبِلَـٰدِ',
+      'وَثَمُودَ ٱلَّذِينَ جَابُوا۟ ٱلصَّخْرَ بِٱلْوَادِ',
+      'وَفِرْعَوْنَ ذِى ٱلْأَوْتَادِ',
+      'ٱلَّذِينَ طَغَوْا۟ فِى ٱلْبِلَـٰدِ',
+      'فَأَكْثَرُوا۟ فِيهَا ٱلْفَسَادَ',
+      'فَصَبَّ عَلَيْهِمْ رَبُّكَ سَوْطَ عَذَابٍ',
+      'إِنَّ رَبَّكَ لَبِٱلْمِرْصَادِ',
+      'فَأَمَّا ٱلْإِنسَـٰنُ إِذَا مَا ٱبْتَلَىٰهُ رَبُّهُۥ فَأَكْرَمَهُۥ وَنَعَّمَهُۥ فَيَقُولُ رَبِّىٓ أَكْرَمَنِ',
+      'وَأَمَّآ إِذَا مَا ٱبْتَلَىٰهُ فَقَدَرَ عَلَيْهِ رِزْقَهُۥ فَيَقُولُ رَبِّىٓ أَهَـٰنَنِ',
+      'كَلَّا بَل لَّا تُكْرِمُونَ ٱلْيَتِيمَ',
+      'وَلَا تَحَـٰٓضُّونَ عَلَىٰ طَعَامِ ٱلْمِسْكِينِ',
+      'وَتَأْكُلُونَ ٱلتُّرَاثَ أَكْلًا لَّمًّا',
+      'وَتُحِبُّونَ ٱلْمَالَ حُبًّا جَمًّا',
+      'كَلَّآ إِذَا دُكَّتِ ٱلْأَرْضُ دَكًّا دَكًّا',
+      'وَجَآءَ رَبُّكَ وَٱلْمَلَكُ صَفًّا صَفًّا',
+      'وَجِا۟ىٓءَ يَوْمَئِذٍۭ بِجَهَنَّمَ يَوْمَئِذٍ يَتَذَكَّرُ ٱلْإِنسَـٰنُ وَأَنَّىٰ لَهُ ٱلذِّكْرَىٰ',
+      'يَقُولُ يَـٰلَيْتَنِى قَدَّمْتُ لِحَيَاتِى',
+      'فَيَوْمَئِذٍ لَّا يُعَذِّبُ عَذَابَهُۥٓ أَحَدٌ',
+      'وَلَا يُوثِقُ وَثَاقَهُۥٓ أَحَدٌ',
+      'يَـٰٓأَيَّتُهَا ٱلنَّفْسُ ٱلْمُطْمَئِنَّةُ',
+      'ٱرْجِعِىٓ إِلَىٰ رَبِّكِ رَاضِيَةً مَّرْضِيَّةً',
+      'فَٱدْخُلِى فِى عِبَـٰدِى',
+      'وَٱدْخُلِى جَنَّتِى'
+    ]
+  },
+  88: {
+    name: 'الغاشية',
+    ayahs: [
+      'هَلْ أَتَىٰكَ حَدِيثُ ٱلْغَـٰشِيَةِ',
+      'وُجُوهٌ يَوْمَئِذٍ خَـٰشِعَةٌ',
+      'عَامِلَةٌ نَّاصِبَةٌ',
+      'تَصْلَىٰ نَارًا حَامِيَةً',
+      'تُسْقَىٰ مِنْ عَيْنٍ ءَانِيَةٍ',
+      'لَّيْسَ لَهُمْ طَعَامٌ إِلَّا مِن ضَرِيعٍ',
+      'لَّا يُسْمِنُ وَلَا يُغْنِى مِن جُوعٍ',
+      'وُجُوهٌ يَوْمَئِذٍ نَّاعِمَةٌ',
+      'لِّسَعْيِهَا رَاضِيَةٌ',
+      'فِى جَنَّةٍ عَالِيَةٍ',
+      'لَّا تَسْمَعُ فِيهَا لَـٰغِيَةً',
+      'فِيهَا عَيْنٌ جَارِيَةٌ',
+      'فِيهَا سُرُرٌ مَّرْفُوعَةٌ',
+      'وَأَكْوَابٌ مَّوْضُوعَةٌ',
+      'وَنَمَارِقُ مَصْفُوفَةٌ',
+      'وَزَرَابِىُّ مَبْثُوثَةٌ',
+      'أَفَلَا يَنظُرُونَ إِلَى ٱلْإِبِلِ كَيْفَ خُلِقَتْ',
+      'وَإِلَى ٱلسَّمَآءِ كَيْفَ رُفِعَتْ',
+      'وَإِلَى ٱلْجِبَالِ كَيْفَ نُصِبَتْ',
+      'وَإِلَى ٱلْأَرْضِ كَيْفَ سُطِحَتْ',
+      'فَذَكِّرْ إِنَّمَآ أَنتَ مُذَكِّرٌ',
+      'لَّسْتَ عَلَيْهِم بِمُصَيْطِرٍ',
+      'إِلَّا مَن تَوَلَّىٰ وَكَفَرَ',
+      'فَيُعَذِّبُهُ ٱللَّهُ ٱلْعَذَابَ ٱلْأَكْبَرَ',
+      'إِنَّ إِلَيْنَآ إِيَابَهُمْ',
+      'ثُمَّ إِنَّ عَلَيْنَا حِسَابَهُم'
+    ]
+  },
+  87: {
+    name: 'الأعلى',
+    ayahs: [
+      'سَبِّحِ ٱسْمَ رَبِّكَ ٱلْأَعْلَى',
+      'ٱلَّذِى خَلَقَ فَسَوَّىٰ',
+      'وَٱلَّذِى قَدَّرَ فَهَدَىٰ',
+      'وَٱلَّذِىٓ أَخْرَجَ ٱلْمَرْعَىٰ',
+      'فَجَعَلَهُۥ غُثَآءً أَحْوَىٰ',
+      'سَنُقْرِئُكَ فَلَا تَنسَىٰٓ',
+      'إِلَّا مَا شَآءَ ٱللَّهُ إِنَّهُۥ يَعْلَمُ ٱلْجَهْرَ وَمَا يَخْفَىٰ',
+      'وَنُيَسِّرُكَ لِلْيُسْرَىٰ',
+      'فَذَكِّرْ إِن نَّفَعَتِ ٱلذِّكْرَىٰ',
+      'سَيَذَّكَّرُ مَن يَخْشَىٰ',
+      'وَيَتَجَنَّبُهَا ٱلْأَشْقَى',
+      'ٱلَّذِى يَصْلَى ٱلنَّارَ ٱلْكُبْرَىٰ',
+      'ثُمَّ لَا يَمُوتُ فِيهَا وَلَا يَحْيَىٰ',
+      'قَدْ أَفْلَحَ مَن تَزَكَّىٰ',
+      'وَذَكَرَ ٱسْمَ رَبِّهِۦ فَصَلَّىٰ',
+      'بَلْ تُؤْثِرُونَ ٱلْحَيَوٰةَ ٱلدُّنْيَا',
+      'وَٱلْـَٔاخِرَةُ خَيْرٌ وَأَبْقَىٰٓ',
+      'إِنَّ هَـٰذَا لَفِى ٱلصُّحُفِ ٱلْأُولَىٰ',
+      'صُحُفِ إِبْرَٰهِيمَ وَمُوسَىٰ'
+    ]
+  },
+  86: {
+    name: 'الطارق',
+    ayahs: [
+      'وَٱلسَّمَآءِ وَٱلطَّارِقِ',
+      'وَمَآ أَدْرَىٰكَ مَا ٱلطَّارِقُ',
+      'ٱلنَّجْمُ ٱلثَّاقِبُ',
+      'إِن كُلُّ نَفْسٍ لَّمَّا عَلَيْهَا حَافِظٌ',
+      'فَلْيَنظُرِ ٱلْإِنسَـٰنُ مِمَّ خُلِقَ',
+      'خُلِقَ مِن مَّآءٍ دَافِقٍ',
+      'يَخْرُجُ مِنۢ بَيْنِ ٱلصُّلْبِ وَٱلتَّرَآئِبِ',
+      'إِنَّهُۥ عَلَىٰ رَجْعِهِۦ لَقَادِرٌ',
+      'يَوْمَ تُبْلَى ٱلسَّرَآئِرُ',
+      'فَمَا لَهُۥ مِن قُوَّةٍ وَلَا نَاصِرٍ',
+      'وَٱلسَّمَآءِ ذَاتِ ٱلرَّجْعِ',
+      'وَٱلْأَرْضِ ذَاتِ ٱلصَّدْعِ',
+      'إِنَّهُۥ لَقَوْلٌ فَصْلٌ',
+      'وَمَا هُوَ بِٱلْهَزْلِ',
+      'إِنَّهُمْ يَكِيدُونَ كَيْدًا',
+      'وَأَكِيدُ كَيْدًا',
+      'فَمَهِّلِ ٱلْكَـٰفِرِينَ أَمْهِلْهُمْ رُوَيْدًا'
+    ]
+  },
+  85: {
+    name: 'البروج',
+    ayahs: [
+      'وَٱلسَّمَآءِ ذَاتِ ٱلْبُرُوجِ',
+      'وَٱلْيَوْمِ ٱلْمَوْعُودِ',
+      'وَشَاهِدٍ وَمَشْهُودٍ',
+      'قُتِلَ أَصْحَـٰبُ ٱلْأُخْدُودِ',
+      'ٱلنَّارِ ذَاتِ ٱلْوَقُودِ',
+      'إِذْ هُمْ عَلَيْهَا قُعُودٌ',
+      'وَهُمْ عَلَىٰ مَا يَفْعَلُونَ بِٱلْمُؤْمِنِينَ شُهُودٌ',
+      'وَمَا نَقَمُوا۟ مِنْهُمْ إِلَّآ أَن يُؤْمِنُوا۟ بِٱللَّهِ ٱلْعَزِيزِ ٱلْحَمِيدِ',
+      'ٱلَّذِى لَهُۥ مُلْكُ ٱلسَّمَـٰوَٰتِ وَٱلْأَرْضِ وَٱللَّهُ عَلَىٰ كُلِّ شَىْءٍ شَهِيدٌ',
+      'إِنَّ ٱلَّذِينَ فَتَنُوا۟ ٱلْمُؤْمِنِينَ وَٱلْمُؤْمِنَـٰتِ ثُمَّ لَمْ يَتُوبُوا۟ فَلَهُمْ عَذَابُ جَهَنَّمَ وَلَهُمْ عَذَابُ ٱلْحَرِيقِ',
+      'إِنَّ ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّـٰلِحَـٰتِ لَهُمْ جَنَّـٰتٌ تَجْرِى مِن تَحْتِهَا ٱلْأَنْهَـٰرُ ذَٰلِكَ ٱلْفَوْزُ ٱلْكَبِيرُ',
+      'إِنَّ بَطْشَ رَبِّكَ لَشَدِيدٌ',
+      'إِنَّهُۥ هُوَ يُبْدِئُ وَيُعِيدُ',
+      'وَهُوَ ٱلْغَفُورُ ٱلْوَدُودُ',
+      'ذُو ٱلْعَرْشِ ٱلْمَجِيدُ',
+      'فَعَّالٌ لِّمَا يُرِيدُ',
+      'هَلْ أَتَىٰكَ حَدِيثُ ٱلْجُنُودِ',
+      'فِرْعَوْنَ وَثَمُودَ',
+      'بَلِ ٱلَّذِينَ كَفَرُوا۟ فِى تَكْذِيبٍ',
+      'وَٱللَّهُ مِن وَرَآئِهِم مُّحِيطٌ',
+      'بَلْ هُوَ قُرْءَانٌ مَّجِيدٌ',
+      'فِى لَوْحٍ مَّحْفُوظٍ'
+    ]
+  },
+  84: {
+    name: 'الانشقاق',
+    sajda: 20,
+    ayahs: [
+      'إِذَا ٱلسَّمَآءُ ٱنشَقَّتْ',
+      'وَأَذِنَتْ لِرَبِّهَا وَحُقَّتْ',
+      'وَإِذَا ٱلْأَرْضُ مُدَّتْ',
+      'وَأَلْقَتْ مَا فِيهَا وَتَخَلَّتْ',
+      'وَأَذِنَتْ لِرَبِّهَا وَحُقَّتْ',
+      'يَـٰٓأَيُّهَا ٱلْإِنسَـٰنُ إِنَّكَ كَادِحٌ إِلَىٰ رَبِّكَ كَدْحًا فَمُلَـٰقِيهِ',
+      'فَأَمَّا مَنْ أُوتِىَ كِتَـٰبَهُۥ بِيَمِينِهِۦ',
+      'فَسَوْفَ يُحَاسَبُ حِسَابًا يَسِيرًا',
+      'وَيَنقَلِبُ إِلَىٰٓ أَهْلِهِۦ مَسْرُورًا',
+      'وَأَمَّا مَنْ أُوتِىَ كِتَـٰبَهُۥ وَرَآءَ ظَهْرِهِۦ',
+      'فَسَوْفَ يَدْعُوا۟ ثُبُورًا',
+      'وَيَصْلَىٰ سَعِيرًا',
+      'إِنَّهُۥ كَانَ فِىٓ أَهْلِهِۦ مَسْرُورًا',
+      'إِنَّهُۥ ظَنَّ أَن لَّن يَحُورَ',
+      'بَلَىٰٓ إِنَّ رَبَّهُۥ كَانَ بِهِۦ بَصِيرًا',
+      'فَلَآ أُقْسِمُ بِٱلشَّفَقِ',
+      'وَٱلَّيْلِ وَمَا وَسَقَ',
+      'وَٱلْقَمَرِ إِذَا ٱتَّسَقَ',
+      'لَتَرْكَبُنَّ طَبَقًا عَن طَبَقٍ',
+      'فَمَا لَهُمْ لَا يُؤْمِنُونَ',
+      'وَإِذَا قُرِئَ عَلَيْهِمُ ٱلْقُرْءَانُ لَا يَسْجُدُونَ ۩',
+      'بَلِ ٱلَّذِينَ كَفَرُوا۟ يُكَذِّبُونَ',
+      'وَٱللَّهُ أَعْلَمُ بِمَا يُوعُونَ',
+      'فَبَشِّرْهُم بِعَذَابٍ أَلِيمٍ',
+      'إِلَّا ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّـٰلِحَـٰتِ لَهُمْ أَجْرٌ غَيْرُ مَمْنُونٍ'
+    ]
+  },
+  83: {
+    name: 'المطففين',
+    ayahs: [
+      'وَيْلٌ لِّلْمُطَفِّفِينَ',
+      'ٱلَّذِينَ إِذَا ٱكْتَالُوا۟ عَلَى ٱلنَّاسِ يَسْتَوْفُونَ',
+      'وَإِذَا كَالُوهُمْ أَو وَّزَنُوهُمْ يُخْسِرُونَ',
+      'أَلَا يَظُنُّ أُو۟لَـٰٓئِكَ أَنَّهُم مَّبْعُوثُونَ',
+      'لِيَوْمٍ عَظِيمٍ',
+      'يَوْمَ يَقُومُ ٱلنَّاسُ لِرَبِّ ٱلْعَـٰلَمِينَ',
+      'كَلَّآ إِنَّ كِتَـٰبَ ٱلْفُجَّارِ لَفِى سِجِّينٍ',
+      'وَمَآ أَدْرَىٰكَ مَا سِجِّينٌ',
+      'كِتَـٰبٌ مَّرْقُومٌ',
+      'وَيْلٌ يَوْمَئِذٍ لِّلْمُكَذِّبِينَ',
+      'ٱلَّذِينَ يُكَذِّبُونَ بِيَوْمِ ٱلدِّينِ',
+      'وَمَا يُكَذِّبُ بِهِۦٓ إِلَّا كُلُّ مُعْتَدٍ أَثِيمٍ',
+      'إِذَا تُتْلَىٰ عَلَيْهِ ءَايَـٰتُنَا قَالَ أَسَـٰطِيرُ ٱلْأَوَّلِينَ',
+      'كَلَّا بَلْ رَانَ عَلَىٰ قُلُوبِهِم مَّا كَانُوا۟ يَكْسِبُونَ',
+      'كَلَّآ إِنَّهُمْ عَن رَّبِّهِمْ يَوْمَئِذٍ لَّمَحْجُوبُونَ',
+      'ثُمَّ إِنَّهُمْ لَصَالُوا۟ ٱلْجَحِيمِ',
+      'ثُمَّ يُقَالُ هَـٰذَا ٱلَّذِى كُنتُم بِهِۦ تُكَذِّبُونَ',
+      'كَلَّآ إِنَّ كِتَـٰبَ ٱلْأَبْرَارِ لَفِى عِلِّيِّينَ',
+      'وَمَآ أَدْرَىٰكَ مَا عِلِّيُّونَ',
+      'كِتَـٰبٌ مَّرْقُومٌ',
+      'يَشْهَدُهُ ٱلْمُقَرَّبُونَ',
+      'إِنَّ ٱلْأَبْرَارَ لَفِى نَعِيمٍ',
+      'عَلَى ٱلْأَرَآئِكِ يَنظُرُونَ',
+      'تَعْرِفُ فِى وُجُوهِهِمْ نَضْرَةَ ٱلنَّعِيمِ',
+      'يُسْقَوْنَ مِن رَّحِيقٍ مَّخْتُومٍ',
+      'خِتَـٰمُهُۥ مِسْكٌ وَفِى ذَٰلِكَ فَلْيَتَنَافَسِ ٱلْمُتَنَـٰفِسُونَ',
+      'وَمِزَاجُهُۥ مِن تَسْنِيمٍ',
+      'عَيْنًا يَشْرَبُ بِهَا ٱلْمُقَرَّبُونَ',
+      'إِنَّ ٱلَّذِينَ أَجْرَمُوا۟ كَانُوا۟ مِنَ ٱلَّذِينَ ءَامَنُوا۟ يَضْحَكُونَ',
+      'وَإِذَا مَرُّوا۟ بِهِمْ يَتَغَامَزُونَ',
+      'وَإِذَا ٱنقَلَبُوٓا۟ إِلَىٰٓ أَهْلِهِمُ ٱنقَلَبُوا۟ فَكِهِينَ',
+      'وَإِذَا رَأَوْهُمْ قَالُوٓا۟ إِنَّ هَـٰٓؤُلَآءِ لَضَآلُّونَ',
+      'وَمَآ أُرْسِلُوا۟ عَلَيْهِمْ حَـٰفِظِينَ',
+      'فَٱلْيَوْمَ ٱلَّذِينَ ءَامَنُوا۟ مِنَ ٱلْكُفَّارِ يَضْحَكُونَ',
+      'عَلَى ٱلْأَرَآئِكِ يَنظُرُونَ',
+      'هَلْ ثُوِّبَ ٱلْكُفَّارُ مَا كَانُوا۟ يَفْعَلُونَ'
+    ]
+  },
+  82: {
+    name: 'الانفطار',
+    ayahs: [
+      'إِذَا ٱلسَّمَآءُ ٱنفَطَرَتْ',
+      'وَإِذَا ٱلْكَوَاكِبُ ٱنتَثَرَتْ',
+      'وَإِذَا ٱلْبِحَارُ فُجِّرَتْ',
+      'وَإِذَا ٱلْقُبُورُ بُعْثِرَتْ',
+      'عَلِمَتْ نَفْسٌ مَّا قَدَّمَتْ وَأَخَّرَتْ',
+      'يَـٰٓأَيُّهَا ٱلْإِنسَـٰنُ مَا غَرَّكَ بِرَبِّكَ ٱلْكَرِيمِ',
+      'ٱلَّذِى خَلَقَكَ فَسَوَّىٰكَ فَعَدَلَكَ',
+      'فِىٓ أَىِّ صُورَةٍ مَّا شَآءَ رَكَّبَكَ',
+      'كَلَّا بَلْ تُكَذِّبُونَ بِٱلدِّينِ',
+      'وَإِنَّ عَلَيْكُمْ لَحَـٰفِظِينَ',
+      'كِرَامًا كَـٰتِبِينَ',
+      'يَعْلَمُونَ مَا تَفْعَلُونَ',
+      'إِنَّ ٱلْأَبْرَارَ لَفِى نَعِيمٍ',
+      'وَإِنَّ ٱلْفُجَّارَ لَفِى جَحِيمٍ',
+      'يَصْلَوْنَهَا يَوْمَ ٱلدِّينِ',
+      'وَمَا هُمْ عَنْهَا بِغَآئِبِينَ',
+      'وَمَآ أَدْرَىٰكَ مَا يَوْمُ ٱلدِّينِ',
+      'ثُمَّ مَآ أَدْرَىٰكَ مَا يَوْمُ ٱلدِّينِ',
+      'يَوْمَ لَا تَمْلِكُ نَفْسٌ لِّنَفْسٍ شَيْـًٔا وَٱلْأَمْرُ يَوْمَئِذٍ لِّلَّهِ'
+    ]
+  },
+  81: {
+    name: 'التكوير',
+    ayahs: [
+      'إِذَا ٱلشَّمْسُ كُوِّرَتْ',
+      'وَإِذَا ٱلنُّجُومُ ٱنكَدَرَتْ',
+      'وَإِذَا ٱلْجِبَالُ سُيِّرَتْ',
+      'وَإِذَا ٱلْعِشَارُ عُطِّلَتْ',
+      'وَإِذَا ٱلْوُحُوشُ حُشِرَتْ',
+      'وَإِذَا ٱلْبِحَارُ سُجِّرَتْ',
+      'وَإِذَا ٱلنُّفُوسُ زُوِّجَتْ',
+      'وَإِذَا ٱلْمَوْءُۥدَةُ سُئِلَتْ',
+      'بِأَىِّ ذَنۢبٍ قُتِلَتْ',
+      'وَإِذَا ٱلصُّحُفُ نُشِرَتْ',
+      'وَإِذَا ٱلسَّمَآءُ كُشِطَتْ',
+      'وَإِذَا ٱلْجَحِيمُ سُعِّرَتْ',
+      'وَإِذَا ٱلْجَنَّةُ أُزْلِفَتْ',
+      'عَلِمَتْ نَفْسٌ مَّآ أَحْضَرَتْ',
+      'فَلَآ أُقْسِمُ بِٱلْخُنَّسِ',
+      'ٱلْجَوَارِ ٱلْكُنَّسِ',
+      'وَٱلَّيْلِ إِذَا عَسْعَسَ',
+      'وَٱلصُّبْحِ إِذَا تَنَفَّسَ',
+      'إِنَّهُۥ لَقَوْلُ رَسُولٍ كَرِيمٍ',
+      'ذِى قُوَّةٍ عِندَ ذِى ٱلْعَرْشِ مَكِينٍ',
+      'مُّطَاعٍ ثَمَّ أَمِينٍ',
+      'وَمَا صَاحِبُكُم بِمَجْنُونٍ',
+      'وَلَقَدْ رَءَاهُ بِٱلْأُفُقِ ٱلْمُبِينِ',
+      'وَمَا هُوَ عَلَى ٱلْغَيْبِ بِضَنِينٍ',
+      'وَمَا هُوَ بِقَوْلِ شَيْطَـٰنٍ رَّجِيمٍ',
+      'فَأَيْنَ تَذْهَبُونَ',
+      'إِنْ هُوَ إِلَّا ذِكْرٌ لِّلْعَـٰلَمِينَ',
+      'لِمَن شَآءَ مِنكُمْ أَن يَسْتَقِيمَ',
+      'وَمَا تَشَآءُونَ إِلَّآ أَن يَشَآءَ ٱللَّهُ رَبُّ ٱلْعَـٰلَمِينَ'
+    ]
+  },
+  80: {
+    name: 'عبس',
+    ayahs: [
+      'عَبَسَ وَتَوَلَّىٰٓ',
+      'أَن جَآءَهُ ٱلْأَعْمَىٰ',
+      'وَمَا يُدْرِيكَ لَعَلَّهُۥ يَزَّكَّىٰٓ',
+      'أَوْ يَذَّكَّرُ فَتَنفَعَهُ ٱلذِّكْرَىٰٓ',
+      'أَمَّا مَنِ ٱسْتَغْنَىٰ',
+      'فَأَنتَ لَهُۥ تَصَدَّىٰ',
+      'وَمَا عَلَيْكَ أَلَّا يَزَّكَّىٰ',
+      'وَأَمَّا مَن جَآءَكَ يَسْعَىٰ',
+      'وَهُوَ يَخْشَىٰ',
+      'فَأَنتَ عَنْهُ تَلَهَّىٰ',
+      'كَلَّآ إِنَّهَا تَذْكِرَةٌ',
+      'فَمَن شَآءَ ذَكَرَهُۥ',
+      'فِى صُحُفٍ مُّكَرَّمَةٍ',
+      'مَّرْفُوعَةٍ مُّطَهَّرَةٍ',
+      'بِأَيْدِى سَفَرَةٍ',
+      'كِرَامٍۭ بَرَرَةٍ',
+      'قُتِلَ ٱلْإِنسَـٰنُ مَآ أَكْفَرَهُۥ',
+      'مِنْ أَىِّ شَىْءٍ خَلَقَهُۥ',
+      'مِن نُّطْفَةٍ خَلَقَهُۥ فَقَدَّرَهُۥ',
+      'ثُمَّ ٱلسَّبِيلَ يَسَّرَهُۥ',
+      'ثُمَّ أَمَاتَهُۥ فَأَقْبَرَهُۥ',
+      'ثُمَّ إِذَا شَآءَ أَنشَرَهُۥ',
+      'كَلَّا لَمَّا يَقْضِ مَآ أَمَرَهُۥ',
+      'فَلْيَنظُرِ ٱلْإِنسَـٰنُ إِلَىٰ طَعَامِهِۦٓ',
+      'أَنَّا صَبَبْنَا ٱلْمَآءَ صَبًّا',
+      'ثُمَّ شَقَقْنَا ٱلْأَرْضَ شَقًّا',
+      'فَأَنۢبَتْنَا فِيهَا حَبًّا',
+      'وَعِنَبًا وَقَضْبًا',
+      'وَزَيْتُونًا وَنَخْلًا',
+      'وَحَدَآئِقَ غُلْبًا',
+      'وَفَـٰكِهَةً وَأَبًّا',
+      'مَّتَـٰعًا لَّكُمْ وَلِأَنْعَـٰمِكُمْ',
+      'فَإِذَا جَآءَتِ ٱلصَّآخَّةُ',
+      'يَوْمَ يَفِرُّ ٱلْمَرْءُ مِنْ أَخِيهِ',
+      'وَأُمِّهِۦ وَأَبِيهِ',
+      'وَصَـٰحِبَتِهِۦ وَبَنِيهِ',
+      'لِكُلِّ ٱمْرِئٍ مِّنْهُمْ يَوْمَئِذٍ شَأْنٌ يُغْنِيهِ',
+      'وُجُوهٌ يَوْمَئِذٍ مُّسْفِرَةٌ',
+      'ضَاحِكَةٌ مُّسْتَبْشِرَةٌ',
+      'وَوُجُوهٌ يَوْمَئِذٍ عَلَيْهَا غَبَرَةٌ',
+      'تَرْهَقُهَا قَتَرَةٌ',
+      'أُو۟لَـٰٓئِكَ هُمُ ٱلْكَفَرَةُ ٱلْفَجَرَةُ'
+    ]
+  },
+  79: {
+    name: 'النازعات',
+    ayahs: [
+      'وَٱلنَّـٰزِعَـٰتِ غَرْقًا',
+      'وَٱلنَّـٰشِطَـٰتِ نَشْطًا',
+      'وَٱلسَّـٰبِحَـٰتِ سَبْحًا',
+      'فَٱلسَّـٰبِقَـٰتِ سَبْقًا',
+      'فَٱلْمُدَبِّرَٰتِ أَمْرًا',
+      'يَوْمَ تَرْجُفُ ٱلرَّاجِفَةُ',
+      'تَتْبَعُهَا ٱلرَّادِفَةُ',
+      'قُلُوبٌ يَوْمَئِذٍ وَاجِفَةٌ',
+      'أَبْصَـٰرُهَا خَـٰشِعَةٌ',
+      'يَقُولُونَ أَءِنَّا لَمَرْدُودُونَ فِى ٱلْحَافِرَةِ',
+      'أَءِذَا كُنَّا عِظَـٰمًا نَّخِرَةً',
+      'قَالُوا۟ تِلْكَ إِذًا كَرَّةٌ خَاسِرَةٌ',
+      'فَإِنَّمَا هِىَ زَجْرَةٌ وَٰحِدَةٌ',
+      'فَإِذَا هُم بِٱلسَّاهِرَةِ',
+      'هَلْ أَتَىٰكَ حَدِيثُ مُوسَىٰٓ',
+      'إِذْ نَادَىٰهُ رَبُّهُۥ بِٱلْوَادِ ٱلْمُقَدَّسِ طُوًى',
+      'ٱذْهَبْ إِلَىٰ فِرْعَوْنَ إِنَّهُۥ طَغَىٰ',
+      'فَقُلْ هَل لَّكَ إِلَىٰٓ أَن تَزَكَّىٰ',
+      'وَأَهْدِيَكَ إِلَىٰ رَبِّكَ فَتَخْشَىٰ',
+      'فَأَرَىٰهُ ٱلْـَٔايَةَ ٱلْكُبْرَىٰ',
+      'فَكَذَّبَ وَعَصَىٰ',
+      'ثُمَّ أَدْبَرَ يَسْعَىٰ',
+      'فَحَشَرَ فَنَادَىٰ',
+      'فَقَالَ أَنَا۠ رَبُّكُمُ ٱلْأَعْلَىٰ',
+      'فَأَخَذَهُ ٱللَّهُ نَكَالَ ٱلْـَٔاخِرَةِ وَٱلْأُولَىٰٓ',
+      'إِنَّ فِى ذَٰلِكَ لَعِبْرَةً لِّمَن يَخْشَىٰٓ',
+      'ءَأَنتُمْ أَشَدُّ خَلْقًا أَمِ ٱلسَّمَآءُ بَنَىٰهَا',
+      'رَفَعَ سَمْكَهَا فَسَوَّىٰهَا',
+      'وَأَغْطَشَ لَيْلَهَا وَأَخْرَجَ ضُحَىٰهَا',
+      'وَٱلْأَرْضَ بَعْدَ ذَٰلِكَ دَحَىٰهَا',
+      'أَخْرَجَ مِنْهَا مَآءَهَا وَمَرْعَىٰهَا',
+      'وَٱلْجِبَالَ أَرْسَىٰهَا',
+      'مَتَـٰعًا لَّكُمْ وَلِأَنْعَـٰمِكُمْ',
+      'فَإِذَا جَآءَتِ ٱلطَّآمَّةُ ٱلْكُبْرَىٰ',
+      'يَوْمَ يَتَذَكَّرُ ٱلْإِنسَـٰنُ مَا سَعَىٰ',
+      'وَبُرِّزَتِ ٱلْجَحِيمُ لِمَن يَرَىٰ',
+      'فَأَمَّا مَن طَغَىٰ',
+      'وَءَاثَرَ ٱلْحَيَوٰةَ ٱلدُّنْيَا',
+      'فَإِنَّ ٱلْجَحِيمَ هِىَ ٱلْمَأْوَىٰ',
+      'وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِۦ وَنَهَى ٱلنَّفْسَ عَنِ ٱلْهَوَىٰ',
+      'فَإِنَّ ٱلْجَنَّةَ هِىَ ٱلْمَأْوَىٰ',
+      'يَسْـَٔلُونَكَ عَنِ ٱلسَّاعَةِ أَيَّانَ مُرْسَىٰهَا',
+      'فِيمَ أَنتَ مِن ذِكْرَىٰهَآ',
+      'إِلَىٰ رَبِّكَ مُنتَهَىٰهَآ',
+      'إِنَّمَآ أَنتَ مُنذِرُ مَن يَخْشَىٰهَا',
+      'كَأَنَّهُمْ يَوْمَ يَرَوْنَهَا لَمْ يَلْبَثُوٓا۟ إِلَّا عَشِيَّةً أَوْ ضُحَىٰهَا'
+    ]
+  },
+  78: {
+    name: 'النبأ',
+    ayahs: [
+      'عَمَّ يَتَسَآءَلُونَ',
+      'عَنِ ٱلنَّبَإِ ٱلْعَظِيمِ',
+      'ٱلَّذِى هُمْ فِيهِ مُخْتَلِفُونَ',
+      'كَلَّا سَيَعْلَمُونَ',
+      'ثُمَّ كَلَّا سَيَعْلَمُونَ',
+      'أَلَمْ نَجْعَلِ ٱلْأَرْضَ مِهَـٰدًا',
+      'وَٱلْجِبَالَ أَوْتَادًا',
+      'وَخَلَقْنَـٰكُمْ أَزْوَٰجًا',
+      'وَجَعَلْنَا نَوْمَكُمْ سُبَاتًا',
+      'وَجَعَلْنَا ٱلَّيْلَ لِبَاسًا',
+      'وَجَعَلْنَا ٱلنَّهَارَ مَعَاشًا',
+      'وَبَنَيْنَا فَوْقَكُمْ سَبْعًا شِدَادًا',
+      'وَجَعَلْنَا سِرَاجًا وَهَّاجًا',
+      'وَأَنزَلْنَا مِنَ ٱلْمُعْصِرَٰتِ مَآءً ثَجَّاجًا',
+      'لِّنُخْرِجَ بِهِۦ حَبًّا وَنَبَاتًا',
+      'وَجَنَّـٰتٍ أَلْفَافًا',
+      'إِنَّ يَوْمَ ٱلْفَصْلِ كَانَ مِيقَـٰتًا',
+      'يَوْمَ يُنفَخُ فِى ٱلصُّورِ فَتَأْتُونَ أَفْوَاجًا',
+      'وَفُتِحَتِ ٱلسَّمَآءُ فَكَانَتْ أَبْوَٰبًا',
+      'وَسُيِّرَتِ ٱلْجِبَالُ فَكَانَتْ سَرَابًا',
+      'إِنَّ جَهَنَّمَ كَانَتْ مِرْصَادًا',
+      'لِّلطَّـٰغِينَ مَـَٔابًا',
+      'لَّـٰبِثِينَ فِيهَآ أَحْقَابًا',
+      'لَّا يَذُوقُونَ فِيهَا بَرْدًا وَلَا شَرَابًا',
+      'إِلَّا حَمِيمًا وَغَسَّاقًا',
+      'جَزَآءً وِفَاقًا',
+      'إِنَّهُمْ كَانُوا۟ لَا يَرْجُونَ حِسَابًا',
+      'وَكَذَّبُوا۟ بِـَٔايَـٰتِنَا كِذَّابًا',
+      'وَكُلَّ شَىْءٍ أَحْصَيْنَـٰهُ كِتَـٰبًا',
+      'فَذُوقُوا۟ فَلَن نَّزِيدَكُمْ إِلَّا عَذَابًا',
+      'إِنَّ لِلْمُتَّقِينَ مَفَازًا',
+      'حَدَآئِقَ وَأَعْنَـٰبًا',
+      'وَكَوَاعِبَ أَتْرَابًا',
+      'وَكَأْسًا دِهَاقًا',
+      'لَّا يَسْمَعُونَ فِيهَا لَغْوًا وَلَا كِذَّٰبًا',
+      'جَزَآءً مِّن رَّبِّكَ عَطَآءً حِسَابًا',
+      'رَّبِّ ٱلسَّمَـٰوَٰتِ وَٱلْأَرْضِ وَمَا بَيْنَهُمَا ٱلرَّحْمَـٰنِ لَا يَمْلِكُونَ مِنْهُ خِطَابًا',
+      'يَوْمَ يَقُومُ ٱلرُّوحُ وَٱلْمَلَـٰٓئِكَةُ صَفًّا لَّا يَتَكَلَّمُونَ إِلَّا مَنْ أَذِنَ لَهُ ٱلرَّحْمَـٰنُ وَقَالَ صَوَابًا',
+      'ذَٰلِكَ ٱلْيَوْمُ ٱلْحَقُّ فَمَن شَآءَ ٱتَّخَذَ إِلَىٰ رَبِّهِۦ مَـَٔابًا',
+      'إِنَّآ أَنذَرْنَـٰكُمْ عَذَابًا قَرِيبًا يَوْمَ يَنظُرُ ٱلْمَرْءُ مَا قَدَّمَتْ يَدَاهُ وَيَقُولُ ٱلْكَافِرُ يَـٰلَيْتَنِى كُنتُ تُرَٰبًا'
+    ]
+  },
   90: {
     name: 'البلد',
     ayahs: [
@@ -940,6 +1474,15 @@ const SURAHS = {
     ]
   },
 };
+
+// ── Surah order (dropdown order) ──
+const SURAH_ORDER = [1,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114];
+
+function getNextSurahId(currentId) {
+  const idx = SURAH_ORDER.indexOf(parseInt(currentId));
+  if (idx === -1 || idx === SURAH_ORDER.length - 1) return null;
+  return SURAH_ORDER[idx + 1];
+}
 
 // ── State ──
 let hideDelay = 4000;
@@ -1022,7 +1565,7 @@ function loadSurah(id) {
     // ayah end marker — tap to reveal full ayah
     const endMark = document.createElement('span');
     endMark.className = 'aya-end';
-    endMark.textContent = ' ۝';
+    endMark.textContent = ' ۝' + toArabicNum(idx);
     endMark.title = 'دوس لتظهر الآية كلها';
     endMark.style.cursor = 'pointer';
     endMark.addEventListener('click', () => {
@@ -1051,16 +1594,34 @@ function loadSurah(id) {
   });
 
   updateStats();
+
+  // Next surah card
+  const nextId = getNextSurahId(id);
+  if (nextId && SURAHS[nextId]) {
+    const card = document.createElement('div');
+    card.className = 'next-surah-card';
+    card.innerHTML = `
+      <div class="next-surah-label">السورة التالية</div>
+      <div class="next-surah-name">${SURAHS[nextId].name}</div>
+      <button class="btn-next-surah" onclick="goNextSurah(${nextId})">
+        <span>انتقل إلى ${SURAHS[nextId].name}</span>
+        <span class="arrow">←</span>
+      </button>
+    `;
+    container.appendChild(card);
+  }
+}
+
+function goNextSurah(id) {
+  document.getElementById('surahSelect').value = id;
+  loadSurah(id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function revealWord(span) {
   if (!span.classList.contains('hidden') && !span.classList.contains('fading')) return;
 
   // Hide hint after first tap
-  if (!hintHidden) {
-    hintHidden = true;
-    document.getElementById('hint').classList.add('gone');
-  }
 
   const id = span.dataset.id;
 
@@ -1085,8 +1646,9 @@ function revealWord(span) {
 
 let nextAyahIndex = 0;
 
-const ARABIC_NUMS = ['١','٢','٣','٤','٥','٦','٧','٨','٩','١٠','١١','١٢','١٣','١٤','١٥','١٦','١٧','١٨','١٩','٢٠'];
-function toArabicNum(n) { return ARABIC_NUMS[n] || (n+1); }
+function toArabicNum(n) {
+  return String(n + 1).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
 
 function updateNBtn() {
   const n = document.getElementById('nWordsSelect').value;
