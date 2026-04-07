@@ -237,6 +237,11 @@ header {
   color: var(--gold);
   opacity: 0.4;
   margin-right: 4px;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.aya-end:hover {
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 /* ═══ HINT ═══ */
@@ -290,6 +295,47 @@ header {
 .stat-num  { font-size: 1rem; font-weight: 700; color: var(--gold); line-height: 1; }
 .stat-label{ font-size: 0.58rem; color: var(--text3); letter-spacing: 0.5px; }
 .divider { width: 1px; height: 24px; background: rgba(255,255,255,0.07); }
+
+.nwords-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(74,144,217,0.3);
+}
+.nwords-select {
+  background: #0e2240;
+  border: none;
+  color: #7ab8ff;
+  padding: 9px 8px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 38px;
+  text-align: center;
+  border-left: 1px solid rgba(74,144,217,0.2);
+}
+.nwords-select option { background: #111820; }
+.btn-reveal-n {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0e2240 100%);
+  border: none;
+  color: #7ab8ff;
+  padding: 9px 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.btn-reveal-n:hover  { background: linear-gradient(135deg, #1e4a7a, #1a3a5c); }
+.btn-reveal-n:active { transform: scale(0.97); }
 
 .btn-reset {
   background: var(--surface);
@@ -526,6 +572,16 @@ header {
     </div>
   </div>
   <button class="btn-reveal-ayah" id="btnRevealAyah" onclick="revealNextAyah()">إظهار الآية <span id="nextAyahNum">١</span></button>
+  <div class="nwords-group">
+    <select class="nwords-select" id="nWordsSelect" onchange="updateNBtn()">
+      <option value="1">١</option>
+      <option value="2" selected>٢</option>
+      <option value="3">٣</option>
+      <option value="4">٤</option>
+      <option value="5">٥</option>
+    </select>
+    <button class="btn-reveal-n" id="btnRevealN" onclick="revealNWords()">كشف ٢ كلمة</button>
+  </div>
   <button class="btn-reset" onclick="resetSurah()">↺</button>
   <button class="btn-reveal-all" onclick="revealAll()">اكشف الكل</button>
 </div>
@@ -963,10 +1019,22 @@ function loadSurah(id) {
       totalWords++;
     });
 
-    // ayah end marker
+    // ayah end marker — tap to reveal full ayah
     const endMark = document.createElement('span');
     endMark.className = 'aya-end';
     endMark.textContent = ' ۝';
+    endMark.title = 'دوس لتظهر الآية كلها';
+    endMark.style.cursor = 'pointer';
+    endMark.addEventListener('click', () => {
+      block.querySelectorAll('.word').forEach(span => {
+        if (span.classList.contains('hidden') || span.classList.contains('fading')) {
+          span.classList.remove('hidden', 'fading', 'revealed');
+          span.classList.add('revealed');
+          revealedCount++;
+        }
+      });
+      updateStats();
+    });
     textDiv.appendChild(endMark);
 
     // sajda marker
@@ -1020,6 +1088,12 @@ let nextAyahIndex = 0;
 const ARABIC_NUMS = ['١','٢','٣','٤','٥','٦','٧','٨','٩','١٠','١١','١٢','١٣','١٤','١٥','١٦','١٧','١٨','١٩','٢٠'];
 function toArabicNum(n) { return ARABIC_NUMS[n] || (n+1); }
 
+function updateNBtn() {
+  const n = document.getElementById('nWordsSelect').value;
+  const ar = ['١','٢','٣','٤','٥'];
+  document.getElementById('btnRevealN').textContent = 'كشف ' + ar[n-1] + ' كلمة';
+}
+
 function revealNextAyah() {
   const blocks = document.querySelectorAll('.ayah-block');
   if (nextAyahIndex >= blocks.length) return;
@@ -1047,6 +1121,19 @@ function revealNextAyah() {
     btn.disabled = true;
     btn.style.opacity = '0.4';
   }
+}
+
+function revealNWords() {
+  const n = parseInt(document.getElementById('nWordsSelect').value);
+  const allWords = Array.from(document.querySelectorAll('.word.hidden, .word.fading'));
+  let count = 0;
+  for (let i = 0; i < allWords.length && count < n; i++) {
+    allWords[i].classList.remove('hidden', 'fading', 'revealed');
+    allWords[i].classList.add('revealed');
+    revealedCount++;
+    count++;
+  }
+  updateStats();
 }
 
 function resetSurah() {
