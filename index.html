@@ -601,23 +601,30 @@ header {
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 480px) {
-  header { padding: 8px 12px; gap: 8px; }
-  .logo  { font-size: 1.1rem; }
-  .surah-select { font-size: 0.8rem; padding: 7px 9px; }
-  .page-container { padding: 16px 10px 150px; }
-  .ayah-block { padding: 14px 10px 12px; margin-bottom: 8px; }
-  .ayah-text { font-size: clamp(1.45rem, 4.2vw, 1.9rem); line-height: clamp(2.7rem, 7.5vw, 3.4rem); }
-  .bar-row1 { gap: 5px; }
-  .bar-row2 { gap: 5px; }
-  .btn-reset, .btn-reveal-ayah, .btn-reveal-all { padding: 8px 9px; font-size: 0.74rem; }
-  .btn-reveal-n { padding: 8px 11px; font-size: 0.74rem; }
-  .stats-group { padding: 5px 9px; gap: 5px; }
-  .stat-num { font-size: 0.82rem; }
+  header { 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    padding: 10px 12px; 
+    gap: 10px; 
+  }
+  .logo  { font-size: 1.3rem; }
+  .surah-select { font-size: 0.95rem; padding: 8px 10px; width: auto; max-width: 100%; }
+  .custom-surah-wrap { flex: 1 1 100px; min-width: 120px; }
+  .page-container { padding: 20px 12px 160px; overflow-x: hidden; }
+  .ayah-block { padding: 16px 12px 14px; margin-bottom: 10px; }
+  .ayah-text { font-size: clamp(1.7rem, 5vw, 2.2rem); line-height: clamp(3.2rem, 8.5vw, 4rem); }
+  .bar-row1 { gap: 8px; flex-wrap: wrap; }
+  .bar-row2 { gap: 8px; flex-wrap: wrap; }
+  .btn-reset, .btn-reveal-ayah, .btn-reveal-all { padding: 10px 11px; font-size: 0.85rem; }
+  .btn-reveal-n { padding: 10px 14px; font-size: 0.85rem; }
+  .stats-group { padding: 6px 11px; gap: 6px; }
+  .stat-num { font-size: 0.95rem; }
   .progress-wrap { display: none; }
-  .bismillah { font-size: clamp(1.5rem, 4.5vw, 2.2rem); margin-bottom: 24px; }
-  .overlay-card { padding: 24px 16px 20px; border-radius: 16px; }
-  .overlay-title { font-size: 1.9rem; }
-  .tut-step { font-size: 0.8rem; padding: 8px 10px; }
+  .bismillah { font-size: clamp(1.8rem, 5.5vw, 2.5rem); margin-bottom: 28px; }
+  .overlay-card { padding: 28px 20px 24px; border-radius: 18px; margin: 10px; }
+  .overlay-title { font-size: 2.2rem; }
+  .tut-step { font-size: 0.95rem; padding: 10px 12px; }
 }
 
 @media (min-width: 640px) {
@@ -845,16 +852,15 @@ header {
 .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
 
 .sidebar {
-  position: fixed; top: 0; right: 0; width: 320px; max-width: 85vw; height: 100%;
+  position: fixed; top: 0; right: -400px; width: 320px; max-width: 85vw; height: 100%;
   background: var(--header-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-left: 1px solid var(--gold-line); z-index: 1000;
-  transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: right 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 24px; box-shadow: -8px 0 32px rgba(0,0,0,0.5);
 }
 .theme-light .sidebar { box-shadow: -8px 0 32px rgba(0,0,0,0.1); }
-.sidebar.show { transform: translateX(0); }
+.sidebar.show { right: 0; }
 
 .tasbeeh-title {
   font-family: 'Scheherazade New', serif; font-size: 2.5rem; color: var(--gold);
