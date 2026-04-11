@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tasmi3 — تسميع</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Global Popup -->
+  <div id="globalDhikrPopup" class="global-dhikr-popup">
+    <div>الصلاة على النبي ﷺ</div>
+    <button class="close-dhikr-btn" onclick="closeDhikrPopup()">اغلاق</button>
+  </div>
+
+  <!-- Sidebar & Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="tasbeehSidebar">
+    <button class="btn-close-sidebar" onclick="toggleSidebar()">✕</button>
+    <div class="tasbeeh-circle" id="tasbeehCircle" onclick="incrementTasbeeh()">0</div>
+    <button class="tasbeeh-reset" onclick="resetTasbeeh()">⟲ تصفير العداد</button>
+  </div>
+
+
+  <!-- Intro Overlay -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="overlay-title">تسميع</div>
+      <div class="overlay-subtitle">Quran Memorization</div>
+      <div class="tutorial-steps">
+        <div class="tut-step">
+          <span class="tut-icon">👆</span>
+          <span>دوس على أي كلمة عشان تظهر، الكلمة اللي تكشفها هتفضل ظاهرة</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">۝</span>
+          <span>دوس على علامة الآية (۝) عشان تكشف الآية كلها دفعة واحدة</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📖</span>
+          <span>زر <b>إظهار الآية</b> في الأسفل بيكشف الآيات واحدة واحدة بالترتيب وبذكاء</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📜</span>
+          <span>زر <b>المصحف</b> بغير شكل العرض لشكل صفحة المصحف المتصلة الحقيقية</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">🎧</span>
+          <span>من قايمة <b>القراء</b> فوق تقدر تختار قارئك المفضل، ومنها تقدر تسمع أي آية وتتعلم النطق</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">🔍</span>
+          <span>قايمة <b>السور</b> الجديدة مجهزة بخاصية البحث السريع! جرب تبحث عن أي سورة وتجربها</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">٢</span>
+          <span>زر <b>كشف ٢ كلمة</b> بيكشف عدد معين من الكلمات، تقدر تغير الرقم بين ١ لـ ٥ حسب ما يناسبك</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">↺</span>
+          <span>زر <b>الريست</b> بيرجع السورة فاضية تماماً من الأول عشان تعبّر عن إتقانك وتعيد التسميع</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📿</span>
+          <span>زر <b>تسبيح</b> بالأعلى يفتح لك مسبحة إلكترونية</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📚</span>
+          <span>التطبيق يحتوي على سور القرآن من <b>الجزء ٢٧ حتى الجزء ٣٠</b></span>
+        </div>
+      </div>
+      <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <select class="surah-select" id="reciterSelect" onchange="stopAyahAudio()"
+      style="width: auto; padding: 9px 8px; font-weight: bold; color: var(--gold);">
+      <option value="Husary_128kbps">الحصري</option>
+      <option value="Minshawy_Murattal_128kbps">المنشاوي</option>
+      <option value="MaherAlMuaiqly128kbps">ماهر المعيقلي</option>
+      <option value="Muhammad_Ayyoub_128kbps">محمد أيوب</option>
+      <option value="Ali_Jaber_64kbps">علي جابر</option>
+      <option value="Alafasy_128kbps">مشاري العفاسي</option>
+      <option value="mahmoud_ali_al_banna_32kbps">البنا</option>
+      <option value="Yasser_Ad-Dussary_128kbps">ياسر الدوسري</option>
+    </select>
+
+    <div class="custom-surah-wrap" id="customSurahWrap">
+      <div class="custom-selected" id="customSurahSelected">
+        <span id="customSurahText">الفاتحة</span>
+        <span style="font-size: 0.7rem;">▼</span>
+      </div>
+      <div class="custom-dropdown" id="customSurahDropdown">
+        <div class="custom-search">
+          <input type="text" id="customSurahSearch" placeholder="ابحث عن سورة...">
+        </div>
+        <div class="custom-options" id="customSurahOptions"></div>
+      </div>
+    </div>
+    <select class="surah-select" id="surahSelect" onchange="loadSurah(this.value)" style="display:none;">
+      <option value="1">الفاتحة</option>
+      <option value="51">الذاريات</option>
+      <option value="52">الطور</option>
+      <option value="53">النجم</option>
+      <option value="54">القمر</option>
+      <option value="55">الرحمن</option>
+      <option value="56">الواقعة</option>
+      <option value="57">الحديد</option>
+      <option value="58">المجادلة</option>
+      <option value="59">الحشر</option>
+      <option value="60">الممتحنة</option>
+      <option value="61">الصف</option>
+      <option value="62">الجمعة</option>
+      <option value="63">المنافقون</option>
+      <option value="64">التغابن</option>
+      <option value="65">الطلاق</option>
+      <option value="66">التحريم</option>
+      <option value="67">الملك</option>
+      <option value="68">القلم</option>
+      <option value="69">الحاقة</option>
+      <option value="70">المعارج</option>
+      <option value="71">نوح</option>
+      <option value="72">الجن</option>
+      <option value="73">المزمل</option>
+      <option value="74">المدثر</option>
+      <option value="75">القيامة</option>
+      <option value="76">الإنسان</option>
+      <option value="77">المرسلات</option>
+      <option value="78">النبأ</option>
+      <option value="79">النازعات</option>
+      <option value="80">عبس</option>
+      <option value="81">التكوير</option>
+      <option value="82">الانفطار</option>
+      <option value="83">المطففين</option>
+      <option value="84">الانشقاق</option>
+      <option value="85">البروج</option>
+      <option value="86">الطارق</option>
+      <option value="87">الأعلى</option>
+      <option value="88">الغاشية</option>
+      <option value="89">الفجر</option>
+      <option value="90">البلد</option>
+      <option value="91">الشمس</option>
+      <option value="92">الليل</option>
+      <option value="93">الضحى</option>
+      <option value="94">الشرح</option>
+      <option value="95">التين</option>
+      <option value="96">العلق</option>
+      <option value="97">القدر</option>
+      <option value="98">البينة</option>
+      <option value="99">الزلزلة</option>
+      <option value="100">العاديات</option>
+      <option value="101">القارعة</option>
+      <option value="102">التكاثر</option>
+      <option value="103">العصر</option>
+      <option value="104">الهمزة</option>
+      <option value="105">الفيل</option>
+      <option value="106">قريش</option>
+      <option value="107">الماعون</option>
+      <option value="108">الكوثر</option>
+      <option value="109">الكافرون</option>
+      <option value="110">النصر</option>
+      <option value="111">المسد</option>
+      <option value="112">الإخلاص</option>
+      <option value="113">الفلق</option>
+      <option value="114">الناس</option>
+    </select>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="theme-toggle"
+        style="display:flex; border:1px solid var(--gold-line); border-radius:8px; overflow:hidden;">
+        <button id="btnThemeDark" onclick="setTheme('dark')"
+          style="padding:5px 10px; background:var(--gold-dim); color:var(--gold); border:none; border-left:1px solid var(--gold-line); cursor:pointer; font-weight:bold; font-family:'Cairo', sans-serif; transition: all 0.2s;">🌙</button>
+        <button id="btnThemeLight" onclick="setTheme('light')"
+          style="padding:5px 10px; background:transparent; color:var(--text2); border:none; cursor:pointer; font-weight:bold; font-family:'Cairo', sans-serif; transition: all 0.2s;">☀️</button>
+      </div>
+      <button id="btnMushaf" onclick="toggleMushafMode()"
+        style="background: transparent; border: 1px solid var(--gold-line); color: var(--gold); padding: 6px 12px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">المصحف</button>
+      <button id="btnTasbeeh" onclick="toggleSidebar()"
+        style="background: transparent; border: 1px solid var(--gold-line); color: var(--gold); padding: 6px 12px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">تسبيح</button>
+      <div class="progress-wrap">
+        <div class="progress-pct" id="statPct">0%</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+
+  <!-- Main Content -->
+  <div class="page-container" id="pageContainer">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button id="btnPlayWholeSurah" onclick="playWholeSurah()"
+        style="display: none; margin: 0 auto; background: rgba(212, 168, 83, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);">▶ استماع للسورة</button>
+    </div>
+    <div class="bismillah" id="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+    <div id="ayahsContainer"></div>
+  </div>
+
+
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="bar-row1">
+      <div class="stats-group">
+        <div class="stat">
+          <div class="stat-num" id="statRevealed">0</div>
+          <div class="stat-label">كُشف</div>
+        </div>
+        <div class="divider"></div>
+        <div class="stat">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-label">كلمة</div>
+        </div>
+      </div>
+      <button class="btn-reveal-ayah" id="btnRevealAyah" onclick="revealNextAyah()">إظهار الآية <span
+          id="nextAyahNum">١</span></button>
+      <button class="btn-reveal-all" onclick="revealAll()">اكشف الكل</button>
+      <button class="btn-reset" onclick="resetSurah()">↺</button>
+    </div>
+    <div class="bar-row2">
+      <div class="nwords-group">
+        <button class="step-btn" title="تقليل العدد" onclick="changeNWords(-1)">-</button>
+        <button class="btn-reveal-n" id="btnRevealN" onclick="revealNWords()">كشف ٢ كلمة</button>
+        <button class="step-btn" title="زيادة العدد" onclick="changeNWords(1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
