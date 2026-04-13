@@ -358,15 +358,19 @@ async function loadSurah(id) {
   updateStats();
 
   // Next surah card
-  const nextId = getNextSurahId(id);
-  if (nextId && SURAHS[nextId]) {
+  const nextId = parseInt(id) < 114 ? parseInt(id) + 1 : null;
+  if (nextId) {
+    const nativeSelect = document.getElementById('surahSelect');
+    const opt = nativeSelect ? nativeSelect.querySelector(`option[value="${nextId}"]`) : null;
+    const nextName = opt ? opt.text : ('سورة ' + nextId);
+
     const card = document.createElement('div');
     card.className = 'next-surah-card';
     card.innerHTML = `
       <div class="next-surah-label">السورة التالية</div>
-      <div class="next-surah-name">${SURAHS[nextId].name}</div>
+      <div class="next-surah-name">${nextName}</div>
       <button class="btn-next-surah" onclick="goNextSurah(${nextId})">
-        <span>انتقل إلى ${SURAHS[nextId].name}</span>
+        <span>انتقل إلى ${nextName}</span>
         <span class="arrow">←</span>
       </button>
     `;
