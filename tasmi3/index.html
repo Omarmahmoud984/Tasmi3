@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"> 
+<html lang="ar" dir="rtl">
 
 <head>
   <meta charset="UTF-8">
@@ -9,6 +9,7 @@
     href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -16,20 +17,37 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Global Popup -->
   <div id="globalDhikrPopup" class="global-dhikr-popup">
-    <div>الصلاة على النبي ﷺ</div>
+    <span class="dhikr-text">الصلاة على النبي ﷺ</span>
     <button class="close-dhikr-btn" onclick="closeDhikrPopup()">اغلاق</button>
   </div>
 
-  <!-- Sidebar & Overlay -->
+  <!-- Navigation Sidebar -->
+  <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
+  <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+      <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
+      <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">الرئيسية</a>
+      <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
+      <a href="good.html" class="nav-link">جيد 🟡</a>
+      <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
+      <button id="btnInstallApp" class="nav-link"
+        style="display:block; text-align:right; border:1px solid var(--gold); background:var(--gold-dim); color:var(--gold); font-weight:bold; cursor:pointer; margin-top:20px; font-size:1rem; border-radius:8px;"
+        onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
+    </div>
+  </div>
+
+  <!-- Sidebar & Overlay (Tasbeeh) -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="tasbeehSidebar">
     <button class="btn-close-sidebar" onclick="toggleSidebar()">✕</button>
     <div class="tasbeeh-circle" id="tasbeehCircle" onclick="incrementTasbeeh()">0</div>
     <button class="tasbeeh-reset" onclick="resetTasbeeh()">⟲ تصفير العداد</button>
   </div>
-
 
   <!-- Intro Overlay -->
   <div class="overlay" id="overlay">
@@ -70,12 +88,13 @@
           <span>زر <b>الريست</b> بيرجع السورة فاضية تماماً من الأول عشان تعبّر عن إتقانك وتعيد التسميع</span>
         </div>
         <div class="tut-step">
-          <span class="tut-icon">📿</span>
-          <span>زر <b>تسبيح</b> بالأعلى يفتح لك مسبحة إلكترونية</span>
+          <span class="tut-icon">🎨</span>
+          <span>استخدم أزرار التقييم بالأعلى (🔴 🟡 🟢) لتصنيف السورة حسب مستوى حفظك (يحتاج مراجعة، جيد، ممتاز)
+            لمراجعتها لاحقاً من القائمة الجانبية.</span>
         </div>
         <div class="tut-step">
           <span class="tut-icon">📚</span>
-          <span>التطبيق يحتوي على سور القرآن من <b>الجزء ٢٧ حتى الجزء ٣٠</b></span>
+          <span>التطبيق الآن يحتوي على <b>المصحف الشريف بالكامل</b> (١١٤ سورة).</span>
         </div>
       </div>
       <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
@@ -84,109 +103,32 @@
 
   <!-- Header -->
   <header>
-    <select class="surah-select" id="reciterSelect" onchange="stopAyahAudio()"
-      style="width: auto; padding: 9px 8px; font-weight: bold; color: var(--gold);">
-      <option value="Husary_128kbps">الحصري</option>
-      <option value="Minshawy_Murattal_128kbps">المنشاوي</option>
-      <option value="MaherAlMuaiqly128kbps">ماهر المعيقلي</option>
-      <option value="Muhammad_Ayyoub_128kbps">محمد أيوب</option>
-      <option value="Ali_Jaber_64kbps">علي جابر</option>
-      <option value="Alafasy_128kbps">مشاري العفاسي</option>
-      <option value="mahmoud_ali_al_banna_32kbps">البنا</option>
-      <option value="Yasser_Ad-Dussary_128kbps">ياسر الدوسري</option>
-    </select>
+    <!-- Row 1: Nav + Surah picker + Status + Progress -->
+    <div class="header-row1">
+      <button id="btnNav" class="btn-nav" onclick="toggleNavSidebar()">☰</button>
 
-    <div class="custom-surah-wrap" id="customSurahWrap">
-      <div class="custom-selected" id="customSurahSelected">
-        <span id="customSurahText">الفاتحة</span>
-        <span style="font-size: 0.7rem;">▼</span>
-      </div>
-      <div class="custom-dropdown" id="customSurahDropdown">
-        <div class="custom-search">
-          <input type="text" id="customSurahSearch" placeholder="ابحث عن سورة...">
+      <div class="custom-surah-wrap" id="customSurahWrap">
+        <div class="custom-selected" id="customSurahSelected">
+          <span id="customSurahText">الفاتحة</span>
+          <span style="font-size: 0.7rem;">▼</span>
         </div>
-        <div class="custom-options" id="customSurahOptions"></div>
+        <div class="custom-dropdown" id="customSurahDropdown">
+          <div class="custom-search">
+            <input type="text" id="customSurahSearch" placeholder="ابحث عن سورة...">
+          </div>
+          <div class="custom-options" id="customSurahOptions"></div>
+        </div>
       </div>
-    </div>
-    <select class="surah-select" id="surahSelect" onchange="loadSurah(this.value)" style="display:none;">
-      <option value="1">الفاتحة</option>
-      <option value="51">الذاريات</option>
-      <option value="52">الطور</option>
-      <option value="53">النجم</option>
-      <option value="54">القمر</option>
-      <option value="55">الرحمن</option>
-      <option value="56">الواقعة</option>
-      <option value="57">الحديد</option>
-      <option value="58">المجادلة</option>
-      <option value="59">الحشر</option>
-      <option value="60">الممتحنة</option>
-      <option value="61">الصف</option>
-      <option value="62">الجمعة</option>
-      <option value="63">المنافقون</option>
-      <option value="64">التغابن</option>
-      <option value="65">الطلاق</option>
-      <option value="66">التحريم</option>
-      <option value="67">الملك</option>
-      <option value="68">القلم</option>
-      <option value="69">الحاقة</option>
-      <option value="70">المعارج</option>
-      <option value="71">نوح</option>
-      <option value="72">الجن</option>
-      <option value="73">المزمل</option>
-      <option value="74">المدثر</option>
-      <option value="75">القيامة</option>
-      <option value="76">الإنسان</option>
-      <option value="77">المرسلات</option>
-      <option value="78">النبأ</option>
-      <option value="79">النازعات</option>
-      <option value="80">عبس</option>
-      <option value="81">التكوير</option>
-      <option value="82">الانفطار</option>
-      <option value="83">المطففين</option>
-      <option value="84">الانشقاق</option>
-      <option value="85">البروج</option>
-      <option value="86">الطارق</option>
-      <option value="87">الأعلى</option>
-      <option value="88">الغاشية</option>
-      <option value="89">الفجر</option>
-      <option value="90">البلد</option>
-      <option value="91">الشمس</option>
-      <option value="92">الليل</option>
-      <option value="93">الضحى</option>
-      <option value="94">الشرح</option>
-      <option value="95">التين</option>
-      <option value="96">العلق</option>
-      <option value="97">القدر</option>
-      <option value="98">البينة</option>
-      <option value="99">الزلزلة</option>
-      <option value="100">العاديات</option>
-      <option value="101">القارعة</option>
-      <option value="102">التكاثر</option>
-      <option value="103">العصر</option>
-      <option value="104">الهمزة</option>
-      <option value="105">الفيل</option>
-      <option value="106">قريش</option>
-      <option value="107">الماعون</option>
-      <option value="108">الكوثر</option>
-      <option value="109">الكافرون</option>
-      <option value="110">النصر</option>
-      <option value="111">المسد</option>
-      <option value="112">الإخلاص</option>
-      <option value="113">الفلق</option>
-      <option value="114">الناس</option>
-    </select>
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div class="theme-toggle"
-        style="display:flex; border:1px solid var(--gold-line); border-radius:8px; overflow:hidden;">
-        <button id="btnThemeDark" onclick="setTheme('dark')"
-          style="padding:5px 10px; background:var(--gold-dim); color:var(--gold); border:none; border-left:1px solid var(--gold-line); cursor:pointer; font-weight:bold; font-family:'Cairo', sans-serif; transition: all 0.2s;">🌙</button>
-        <button id="btnThemeLight" onclick="setTheme('light')"
-          style="padding:5px 10px; background:transparent; color:var(--text2); border:none; cursor:pointer; font-weight:bold; font-family:'Cairo', sans-serif; transition: all 0.2s;">☀️</button>
+      <select class="surah-select" id="surahSelect" onchange="loadSurah(this.value)" style="display:none;"></select>
+
+      <div class="status-group">
+        <button id="btnStatus_needs_review" onclick="toggleSurahStatus('needs_review')" class="status-btn"
+          title="يحتاج مراجعة">🔴</button>
+        <button id="btnStatus_good" onclick="toggleSurahStatus('good')" class="status-btn" title="جيد">🟡</button>
+        <button id="btnStatus_perfect" onclick="toggleSurahStatus('perfect')" class="status-btn"
+          title="ممتاز">🟢</button>
       </div>
-      <button id="btnMushaf" onclick="toggleMushafMode()"
-        style="background: transparent; border: 1px solid var(--gold-line); color: var(--gold); padding: 6px 12px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">المصحف</button>
-      <button id="btnTasbeeh" onclick="toggleSidebar()"
-        style="background: transparent; border: 1px solid var(--gold-line); color: var(--gold); padding: 6px 12px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">تسبيح</button>
+
       <div class="progress-wrap">
         <div class="progress-pct" id="statPct">0%</div>
         <div class="progress-bar-wrap">
@@ -194,6 +136,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Row 2: Reciter + Theme + Mushaf + Tasbeeh -->
+    <div class="header-row2">
+      <select class="surah-select reciter-select" id="reciterSelect" onchange="stopAyahAudio()">
+        <option value="Husary_128kbps">الحصري</option>
+        <option value="Minshawy_Murattal_128kbps">المنشاوي</option>
+        <option value="MaherAlMuaiqly128kbps">ماهر المعيقلي</option>
+        <option value="Muhammad_Ayyoub_128kbps">محمد أيوب</option>
+        <option value="Ali_Jaber_64kbps">علي جابر</option>
+        <option value="Alafasy_128kbps">مشاري العفاسي</option>
+        <option value="mahmoud_ali_al_banna_32kbps">البنا</option>
+        <option value="Yasser_Ad-Dussary_128kbps">ياسر الدوسري</option>
+      </select>
+
+      <div class="header-actions">
+        <div class="theme-toggle">
+          <button id="btnThemeDark" onclick="setTheme('dark')">🌙</button>
+          <button id="btnThemeLight" onclick="setTheme('light')">☀️</button>
+        </div>
+        <button id="btnMushaf" class="btn-header-action" onclick="toggleMushafMode()">المصحف</button>
+        <button id="btnTasbeeh" class="btn-header-action" onclick="toggleSidebar()">تسبيح</button>
+      </div>
+    </div>
+    <button id="btnHeaderToggle" class="btn-header-toggle" onclick="toggleHeader()"
+      title="إخفاء/إظهار الشريط العلوي">▲</button>
   </header>
 
 
@@ -202,7 +169,8 @@
   <div class="page-container" id="pageContainer">
     <div style="text-align: center; margin-bottom: 20px;">
       <button id="btnPlayWholeSurah" onclick="playWholeSurah()"
-        style="display: none; margin: 0 auto; background: rgba(212, 168, 83, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);">▶ استماع للسورة</button>
+        style="display: none; margin: 0 auto; background: rgba(212, 168, 83, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);">▶
+        استماع للسورة</button>
     </div>
     <div class="bismillah" id="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
     <div id="ayahsContainer"></div>
@@ -238,7 +206,27 @@
     </div>
   </div>
 
+  <!-- Sticky Audio Player -->
+  <div id="stickyAudioPlayer" class="sticky-audio-player">
+    <div class="sticky-audio-info">يتم تشغيل السورة...</div>
+    <div style="display:flex; gap:10px;">
+      <button onclick="toggleStickyPause()" id="btnStickyPause">⏸ إيقاف مؤقت</button>
+      <button onclick="stopAllAudio()" style="background:var(--card-bg);">⏹ إنهاء</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }).catch(error => {
+          console.log('ServiceWorker registration failed: ', error);
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>
