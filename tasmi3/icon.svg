@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a1e2e"/>
+      <stop offset="100%" stop-color="#0a0c14"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5d485"/>
+      <stop offset="50%" stop-color="#d4a853"/>
+      <stop offset="100%" stop-color="#9a7a30"/>
+    </linearGradient>
+    <linearGradient id="pageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5eed8"/>
+      <stop offset="100%" stop-color="#e8dfc0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="roundedClip">
+      <rect width="512" height="512" rx="96" ry="96"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bgGrad)"/>
+
+  <!-- Subtle radial glow from center -->
+  <circle cx="256" cy="230" r="160" fill="rgba(212,168,83,0.06)"/>
+
+  <!-- ── Mushaf / Open Book ── -->
+  <!-- Book spine shadow -->
+  <rect x="248" y="120" width="16" height="220" rx="4" fill="#1a1500" opacity="0.6"/>
+
+  <!-- Left page -->
+  <path d="M252 128 Q200 124 148 132 L136 302 Q188 294 252 298 Z" fill="url(#pageGrad)" opacity="0.97"/>
+  <!-- Left page shadow at spine -->
+  <path d="M252 128 Q238 130 232 134 L232 298 Q242 296 252 298 Z" fill="#c9bb99" opacity="0.6"/>
+
+  <!-- Right page -->
+  <path d="M260 128 Q312 124 364 132 L376 302 Q324 294 260 298 Z" fill="url(#pageGrad)" opacity="0.97"/>
+  <!-- Right page shadow at spine -->
+  <path d="M260 128 Q274 130 280 134 L280 298 Q270 296 260 298 Z" fill="#c9bb99" opacity="0.6"/>
+
+  <!-- Left page Arabic lines (decorative) -->
+  <g fill="rgba(120,100,60,0.35)" font-size="0">
+    <rect x="152" y="160" width="86" height="4" rx="2"/>
+    <rect x="152" y="175" width="78" height="4" rx="2"/>
+    <rect x="152" y="190" width="86" height="4" rx="2"/>
+    <rect x="152" y="205" width="70" height="4" rx="2"/>
+    <rect x="152" y="220" width="82" height="4" rx="2"/>
+    <rect x="152" y="235" width="65" height="4" rx="2"/>
+    <rect x="152" y="250" width="86" height="4" rx="2"/>
+    <rect x="152" y="265" width="74" height="4" rx="2"/>
+  </g>
+
+  <!-- Right page Arabic lines (decorative) -->
+  <g fill="rgba(120,100,60,0.35)">
+    <rect x="274" y="160" width="86" height="4" rx="2"/>
+    <rect x="281" y="175" width="78" height="4" rx="2"/>
+    <rect x="274" y="190" width="86" height="4" rx="2"/>
+    <rect x="291" y="205" width="70" height="4" rx="2"/>
+    <rect x="278" y="220" width="82" height="4" rx="2"/>
+    <rect x="296" y="235" width="65" height="4" rx="2"/>
+    <rect x="274" y="250" width="86" height="4" rx="2"/>
+    <rect x="287" y="265" width="74" height="4" rx="2"/>
+  </g>
+
+  <!-- Gold bismillah line on both pages - center decoration -->
+  <rect x="158" y="143" width="74" height="5" rx="2.5" fill="url(#goldGrad)" opacity="0.8"/>
+  <rect x="280" y="143" width="74" height="5" rx="2.5" fill="url(#goldGrad)" opacity="0.8"/>
+
+  <!-- Book cover bottom -->
+  <path d="M134 298 Q188 290 252 295 L256 310 L260 295 Q324 290 378 298 L374 318 Q316 308 260 314 L256 316 L252 314 Q196 308 138 318 Z" fill="url(#goldGrad)" opacity="0.9"/>
+
+  <!-- Book spine center gold line -->
+  <rect x="252" y="120" width="8" height="190" rx="4" fill="url(#goldGrad)" filter="url(#glow)"/>
+
+  <!-- Gold ornamental border on book -->
+  <path d="M252 128 Q200 124 148 132 L136 302 Q188 294 252 298 Z" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" opacity="0.6"/>
+  <path d="M260 128 Q312 124 364 132 L376 302 Q324 294 260 298 Z" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- ── Arabic text "تسميع" ── -->
+  <text
+    x="256"
+    y="400"
+    text-anchor="middle"
+    font-family="'Scheherazade New', 'Traditional Arabic', 'Arial', serif"
+    font-size="88"
+    font-weight="700"
+    fill="url(#goldGrad)"
+    filter="url(#glow)"
+    letter-spacing="2"
+  >تسميع</text>
+
+  <!-- Subtle gold decorative dots flanking the text -->
+  <circle cx="108" cy="390" r="5" fill="url(#goldGrad)" opacity="0.7"/>
+  <circle cx="120" cy="390" r="3" fill="url(#goldGrad)" opacity="0.4"/>
+  <circle cx="404" cy="390" r="5" fill="url(#goldGrad)" opacity="0.7"/>
+  <circle cx="392" cy="390" r="3" fill="url(#goldGrad)" opacity="0.4"/>
+
+  <!-- thin gold decorative line under text -->
+  <rect x="160" y="415" width="192" height="2" rx="1" fill="url(#goldGrad)" opacity="0.5"/>
+</svg>

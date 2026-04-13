@@ -1,0 +1,17 @@
+{
+  "name": "تسميع Quran Memorization",
+  "short_name": "تسميع",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080b0e",
+  "theme_color": "#d4a853",
+  "description": "تطبيق ويب متطور لمساعدتك على تسميع ومراجعة القرآن الكريم بذكاء.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
