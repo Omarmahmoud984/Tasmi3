@@ -16,9 +16,32 @@ const SURAH_NAMES = [
 function initBoard(targetStatus) {
   const container = document.getElementById('boardContainer');
   const statuses = JSON.parse(localStorage.getItem('tasmi3_surah_status') || '{}');
-  
+
   let hasItems = false;
-  
+  let count = 0;
+
+  // Count first
+  for (let i = 1; i <= 114; i++) {
+    if (statuses[i] === targetStatus) count++;
+  }
+
+  // Show count summary
+  if (count > 0) {
+    const summary = document.createElement('div');
+    summary.style.cssText = `
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text3);
+      font-size: 0.85rem;
+      padding: 10px 0 4px;
+      letter-spacing: 1px;
+      font-family: 'Cairo', sans-serif;
+    `;
+    const arabicCount = String(count).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+    summary.textContent = `${arabicCount} سورة في هذا القسم`;
+    container.appendChild(summary);
+  }
+
   for (let i = 1; i <= 114; i++) {
     if (statuses[i] === targetStatus) {
       hasItems = true;
@@ -28,7 +51,7 @@ function initBoard(targetStatus) {
       card.style.transform = 'none';
       card.style.animation = 'none';
       card.style.cursor = 'pointer';
-      
+
       card.innerHTML = `
         <div class="next-surah-label">سورة رقم ${i}</div>
         <div class="next-surah-name">${SURAH_NAMES[i-1]}</div>
@@ -40,11 +63,12 @@ function initBoard(targetStatus) {
       container.appendChild(card);
     }
   }
-  
+
   if (!hasItems) {
     container.innerHTML = '<div style="text-align:center; color: var(--text3); margin-top:50px; font-size: 1.2rem;">لا يوجد سور مسجلة قي هذا القسم بعد.</div>';
   }
 }
+
 
 function toggleNavSidebar() {
   const sidebar = document.getElementById('navSidebar');
