@@ -1,14 +1,6 @@
 // ── Data ──
 const SURAHS = {};
 
-// ── Surah order (dropdown order) ──
-let SURAH_ORDER = Array.from({ length: 114 }, (_, i) => i + 1);
-
-function getNextSurahId(currentId) {
-  const idx = SURAH_ORDER.indexOf(parseInt(currentId));
-  if (idx === -1 || idx === SURAH_ORDER.length - 1) return null;
-  return SURAH_ORDER[idx + 1];
-}
 
 // ── State ──
 let hideDelay = 4000;
@@ -18,11 +10,31 @@ let currentSurah = 1;
 let isHardcoreMode = false;
 let wordTimers = {};
 
+// ── Windowed Rendering State ──
+const WINDOW_RADIUS = 12;
+const WINDOW_MIN_AYAHS = 100; // only activate for surahs with > 100 ayahs
+let _windowEnabled = false;
+let _windowStart = 0;
+let _windowEnd = 0;
+let _ayahMemoryState = {}; // { ayahIdx: [wordId,...] } for out-of-window revealed state
+let _windowObserver = null;
+
 function saveRevealedState() {
   const revealedWords = [];
   document.querySelectorAll('.word.revealed, .word.fading').forEach(span => {
     revealedWords.push(span.dataset.id);
   });
+  // Merge out-of-window ayah state so we never lose progress
+  if (_windowEnabled) {
+    Object.keys(_ayahMemoryState).forEach(idxStr => {
+      const idx = parseInt(idxStr);
+      if (idx < _windowStart || idx > _windowEnd) {
+        (_ayahMemoryState[idx] || []).forEach(wid => {
+          if (!revealedWords.includes(wid)) revealedWords.push(wid);
+        });
+      }
+    });
+  }
   const saved = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
   saved[currentSurah] = revealedWords;
   localStorage.setItem('tasmi3_revealed_state', JSON.stringify(saved));
@@ -42,6 +54,17 @@ function selectDelay(el) {
 let dhikrTimeout;
 let autoHideTimeout;
 
+// ── Toast Notification ──
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 8000);
+}
+
 // ── PWA Install & Update Logic ──
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -50,7 +73,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   // Button is always visible now as requested, so we just store the event
 });
 
-window.installApp = async function() {
+window.installApp = async function () {
   if (deferredPrompt) {
     // If it's installable, trigger prompt
     deferredPrompt.prompt();
@@ -60,7 +83,7 @@ window.installApp = async function() {
     }
   } else {
     // If already installed or prompt unavailable, clicking it forces a cache reload for "updates"
-    showToast("جاري البحث عن تحديثات...");
+    showToast('جاري البحث عن تحديثات...');
     setTimeout(() => {
       window.location.reload(true);
     }, 1000);
@@ -69,19 +92,19 @@ window.installApp = async function() {
 
 function scheduleNextDhikr() {
   // Try again in 2 minutes
-  dhikrTimeout = setTimeout(showDhikrPopup, 120000); 
+  dhikrTimeout = setTimeout(showDhikrPopup, 120000);
 }
 
 function showDhikrPopup() {
   const popup = document.getElementById('globalDhikrPopup');
   const overlay = document.getElementById('overlay');
-  
+
   // Show if overlay is hide (startApp) or none (navigated via ?surah=)
   const isOverlayHidden = !overlay || overlay.classList.contains('hide') || overlay.style.display === 'none';
-  
+
   if (popup && isOverlayHidden) {
     popup.classList.add('show');
-    
+
     // Auto-hide after 6 seconds
     clearTimeout(autoHideTimeout);
     autoHideTimeout = setTimeout(() => {
@@ -96,9 +119,9 @@ function showDhikrPopup() {
 function closeDhikrPopup() {
   const popup = document.getElementById('globalDhikrPopup');
   if (popup) popup.classList.remove('show');
-  
+
   clearTimeout(autoHideTimeout);
-  
+
   // Schedule the next popup ONLY after this one fully closes
   clearTimeout(dhikrTimeout);
   scheduleNextDhikr();
@@ -241,6 +264,8 @@ async function loadSurah(id) {
   Object.values(wordTimers).forEach(clearTimeout);
   wordTimers = {};
   stopAllAudio();
+  _ayahMemoryState = {};
+  if (_windowObserver) { _windowObserver.disconnect(); _windowObserver = null; }
 
   const btnPlayWhole = document.getElementById('btnPlayWholeSurah');
   if (btnPlayWhole) {
@@ -250,119 +275,58 @@ async function loadSurah(id) {
   const container = document.getElementById('ayahsContainer');
   container.innerHTML = '';
 
-  surah.ayahs.forEach((ayah, idx) => {
-    const block = document.createElement('div');
-    block.className = 'ayah-block';
-    block.style.animationDelay = (idx * 0.1) + 's';
+  // Compute totalWords for ALL ayahs upfront (windowing must not affect the count)
+  totalWords = surah.ayahs.reduce((sum, ayah) => sum + ayah.split(' ').length, 0);
 
-    const numDiv = document.createElement('div');
-    numDiv.className = 'ayah-number';
-    numDiv.textContent = 'الآية ' + (idx + 1);
-    block.appendChild(numDiv);
+  // Windowing: only for long surahs (> 100 ayahs)
+  _windowEnabled = surah.ayahs.length > WINDOW_MIN_AYAHS;
+  _windowStart = 0;
+  _windowEnd = _windowEnabled
+    ? Math.min(WINDOW_RADIUS * 2, surah.ayahs.length - 1)
+    : surah.ayahs.length - 1;
 
-    const textDiv = document.createElement('div');
-    textDiv.className = 'ayah-text';
-
-    const words = ayah.split(' ');
-    words.forEach((word, wi) => {
-      const span = document.createElement('span');
-      span.className = 'word hidden';
-      span.dataset.id = `${idx}-${wi}`;
-
-      const inner = document.createElement('span');
-      inner.className = 'word-text';
-      inner.textContent = word;
-      span.appendChild(inner);
-
-      span.addEventListener('click', () => revealWord(span));
-      textDiv.appendChild(span);
-      if (wi < words.length - 1) textDiv.appendChild(document.createTextNode(' '));
-      totalWords++;
-    });
-
-    // ayah end marker — tap to reveal full ayah
-    const endMark = document.createElement('span');
-    endMark.className = 'aya-end';
-    endMark.textContent = ' ۝' + toArabicNum(idx);
-    endMark.title = 'دوس لتظهر الآية كلها';
-    endMark.style.cursor = 'pointer';
-    endMark.addEventListener('click', () => {
-      block.querySelectorAll('.word').forEach(span => {
-        if (span.classList.contains('hidden') || span.classList.contains('fading')) {
-          span.classList.remove('hidden', 'fading', 'revealed');
-          span.classList.add('revealed');
-          revealedCount++;
-        }
-      });
-      updateStats();
-    });
-    textDiv.appendChild(endMark);
-
-    // sajda marker
-    if (surah.sajda !== undefined && surah.sajda === idx) {
-      const sajdaMark = document.createElement('span');
-      sajdaMark.className = 'sajda-mark';
-      sajdaMark.textContent = ' ۩';
-      sajdaMark.title = 'آية سجدة التلاوة';
-      textDiv.appendChild(sajdaMark);
-    }
-
-    block.appendChild(textDiv);
-
-    // ── Per-ayah audio button & undo button ──
-    const audioRow = document.createElement('div');
-    audioRow.className = 'ayah-audio-row';
-    const undoBtn = document.createElement('button');
-    undoBtn.className = 'btn-undo-ayah';
-    undoBtn.title = 'إخفاء الآية (تراجع)';
-    undoBtn.innerHTML = '↺';
-    undoBtn.addEventListener('click', () => {
-      let hidCount = 0;
-      block.querySelectorAll('.word.revealed, .word.fading').forEach(span => {
-        span.classList.remove('revealed', 'fading');
-        span.classList.add('hidden');
-        hidCount++;
-      });
-      revealedCount -= hidCount;
-      if (revealedCount < 0) revealedCount = 0;
-      updateStats();
-    });
-
-    const ayahNum = idx + 1;
-    const audioBtn = document.createElement('button');
-    audioBtn.className = 'btn-ayah-audio';
-    audioBtn.setAttribute('aria-label', 'استمع للآية');
-    audioBtn.innerHTML = `<span class="audio-waves"><span></span><span></span><span></span><span></span></span><span>اسمع الآية</span>`;
-    audioBtn.addEventListener('click', () => playAyahAudio(audioBtn, currentSurah, ayahNum));
-    audioRow.appendChild(undoBtn);
-    audioRow.appendChild(audioBtn);
-    block.appendChild(audioRow);
-
-    container.appendChild(block);
-  });
+  // Render initial window
+  for (let idx = _windowStart; idx <= _windowEnd; idx++) {
+    container.appendChild(createAyahBlock(idx, surah, idx < 12));
+  }
 
   const savedState = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
   if (savedState[id]) {
     savedState[id].forEach(wordId => {
-      const span = container.querySelector(`.word[data-id="${wordId}"]`);
-      if (span) {
-        span.classList.remove('hidden', 'fading');
-        span.classList.add('revealed');
+      const ayahIdx = parseInt(wordId.split('-')[0]);
+      if (_windowEnabled && (ayahIdx < _windowStart || ayahIdx > _windowEnd)) {
+        // Out-of-window: store in memory and count it
+        if (!_ayahMemoryState[ayahIdx]) _ayahMemoryState[ayahIdx] = [];
+        _ayahMemoryState[ayahIdx].push(wordId);
         revealedCount++;
+      } else {
+        const span = container.querySelector(`.word[data-id="${wordId}"]`);
+        if (span) {
+          span.classList.remove('hidden', 'fading');
+          span.classList.add('revealed');
+          revealedCount++;
+        }
       }
     });
   }
 
   localStorage.setItem('tasmi3_last_surah', id);
-
   updateStats();
 
-  // Next surah card
+  // Start IntersectionObserver for windowed surahs
+  if (_windowEnabled) setupWindowObserver();
+
+  // Next surah card — prefer in-memory SURAHS cache, fall back to select option
   const nextId = parseInt(id) < 114 ? parseInt(id) + 1 : null;
   if (nextId) {
-    const nativeSelect = document.getElementById('surahSelect');
-    const opt = nativeSelect ? nativeSelect.querySelector(`option[value="${nextId}"]`) : null;
-    const nextName = opt ? opt.text : ('سورة ' + nextId);
+    let nextName;
+    if (SURAHS[nextId] && SURAHS[nextId].name) {
+      nextName = SURAHS[nextId].name;
+    } else {
+      const nativeSelect = document.getElementById('surahSelect');
+      const opt = nativeSelect ? nativeSelect.querySelector(`option[value="${nextId}"]`) : null;
+      nextName = opt ? opt.text : ('سورة ' + nextId);
+    }
 
     const card = document.createElement('div');
     card.className = 'next-surah-card';
@@ -522,12 +486,40 @@ function revealNWords() {
   }
 }
 
+let _resetUndoTimeout = null;
 function resetSurah() {
-  // Clear the saved revealed state for this surah so loadSurah starts fresh
-  const saved = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
-  delete saved[currentSurah];
-  localStorage.setItem('tasmi3_revealed_state', JSON.stringify(saved));
-  loadSurah(currentSurah);
+  // Show undo toast for 4 seconds before actually resetting
+  if (_resetUndoTimeout) return; // already pending
+
+  const surahBeingReset = currentSurah;
+  const undoEl = document.createElement('div');
+  undoEl.className = 'toast-msg';
+  undoEl.style.cssText = 'display:flex;align-items:center;gap:12px;animation:none;opacity:1;transform:none;pointer-events:auto;';
+  undoEl.innerHTML = `<span>سيتم مسح التقدم خلال ٤ ثواني...</span><button onclick="cancelReset()" style="background:var(--gold);color:#000;border:none;padding:4px 10px;border-radius:6px;font-family:Cairo;font-weight:bold;cursor:pointer;">تراجع</button>`;
+  const container = document.getElementById('toastContainer');
+  if (container) container.appendChild(undoEl);
+
+  _resetUndoTimeout = setTimeout(() => {
+    _resetUndoTimeout = null;
+    if (undoEl.parentNode) undoEl.remove();
+    // Perform the actual reset
+    const saved = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
+    delete saved[surahBeingReset];
+    localStorage.setItem('tasmi3_revealed_state', JSON.stringify(saved));
+    loadSurah(surahBeingReset);
+    showToast('تم إعادة ضبط السورة ✓');
+  }, 4000);
+}
+
+function cancelReset() {
+  if (_resetUndoTimeout) {
+    clearTimeout(_resetUndoTimeout);
+    _resetUndoTimeout = null;
+  }
+  // Remove pending undo toast
+  const container = document.getElementById('toastContainer');
+  if (container) container.innerHTML = '';
+  showToast('تم إلغاء الريست ✓');
 }
 
 function revealAll() {
@@ -537,6 +529,17 @@ function revealAll() {
     span.classList.remove('hidden', 'fading', 'hinted');
     span.classList.add('revealed');
   });
+  // Also mark all out-of-window ayahs as fully revealed in memory
+  if (_windowEnabled) {
+    const surah = SURAHS[currentSurah];
+    if (surah) {
+      surah.ayahs.forEach((ayah, idx) => {
+        if (idx < _windowStart || idx > _windowEnd) {
+          _ayahMemoryState[idx] = ayah.split(' ').map((_, wi) => `${idx}-${wi}`);
+        }
+      });
+    }
+  }
   revealedCount = totalWords;
   updateStats();
 }
@@ -562,6 +565,205 @@ function updateStats() {
       btn.style.opacity = '0.4';
     }
   }
+}
+
+// ── Windowed Rendering Functions ──
+
+function createAyahBlock(idx, surah, animate) {
+  const ayah = surah.ayahs[idx];
+  const block = document.createElement('div');
+  block.className = 'ayah-block';
+  block.dataset.ayahIdx = String(idx);
+  block.style.animationDelay = animate ? Math.min(idx * 0.05, 0.4) + 's' : '0s';
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'ayah-number';
+  numDiv.textContent = 'الآية ' + (idx + 1);
+  block.appendChild(numDiv);
+
+  const textDiv = document.createElement('div');
+  textDiv.className = 'ayah-text';
+
+  const words = ayah.split(' ');
+  words.forEach((word, wi) => {
+    const span = document.createElement('span');
+    span.className = 'word hidden';
+    span.dataset.id = `${idx}-${wi}`;
+    const inner = document.createElement('span');
+    inner.className = 'word-text';
+    inner.textContent = word;
+    span.appendChild(inner);
+    span.addEventListener('click', () => revealWord(span));
+    textDiv.appendChild(span);
+    if (wi < words.length - 1) textDiv.appendChild(document.createTextNode(' '));
+  });
+
+  // Ayah end marker — tap to reveal full ayah
+  const endMark = document.createElement('span');
+  endMark.className = 'aya-end';
+  endMark.textContent = ' ۝' + toArabicNum(idx);
+  endMark.title = 'دوس لتظهر الآية كلها';
+  endMark.style.cursor = 'pointer';
+  endMark.addEventListener('click', () => {
+    block.querySelectorAll('.word').forEach(span => {
+      if (span.classList.contains('hidden') || span.classList.contains('fading')) {
+        span.classList.remove('hidden', 'fading', 'revealed');
+        span.classList.add('revealed');
+        revealedCount++;
+      }
+    });
+    updateStats();
+  });
+  textDiv.appendChild(endMark);
+
+  // Sajda marker
+  if (surah.sajda !== undefined && surah.sajda === idx) {
+    const sajdaMark = document.createElement('span');
+    sajdaMark.className = 'sajda-mark';
+    sajdaMark.textContent = ' ۩';
+    sajdaMark.title = 'آية سجدة التلاوة';
+    textDiv.appendChild(sajdaMark);
+  }
+
+  block.appendChild(textDiv);
+
+  // Per-ayah audio + undo row
+  const audioRow = document.createElement('div');
+  audioRow.className = 'ayah-audio-row';
+  const undoBtn = document.createElement('button');
+  undoBtn.className = 'btn-undo-ayah';
+  undoBtn.title = 'إخفاء الآية (تراجع)';
+  undoBtn.innerHTML = '↺';
+  undoBtn.addEventListener('click', () => {
+    let hidCount = 0;
+    block.querySelectorAll('.word.revealed, .word.fading').forEach(span => {
+      span.classList.remove('revealed', 'fading');
+      span.classList.add('hidden');
+      hidCount++;
+    });
+    revealedCount -= hidCount;
+    if (revealedCount < 0) revealedCount = 0;
+    updateStats();
+  });
+
+  const ayahNum = idx + 1;
+  const audioBtn = document.createElement('button');
+  audioBtn.className = 'btn-ayah-audio';
+  audioBtn.setAttribute('aria-label', 'استمع للآية');
+  audioBtn.innerHTML = `<span class="audio-waves"><span></span><span></span><span></span><span></span></span><span>اسمع الآية</span>`;
+  audioBtn.addEventListener('click', () => playAyahAudio(audioBtn, currentSurah, ayahNum));
+  audioRow.appendChild(undoBtn);
+  audioRow.appendChild(audioBtn);
+  block.appendChild(audioRow);
+
+  return block;
+}
+
+function restoreAyahState(block, idx) {
+  const revealed = _ayahMemoryState[idx];
+  if (!revealed || revealed.length === 0) return;
+  revealed.forEach(wordId => {
+    const span = block.querySelector(`.word[data-id="${wordId}"]`);
+    if (span) {
+      span.classList.remove('hidden', 'fading');
+      span.classList.add('revealed');
+      // Do NOT increment revealedCount — already counted at load/reveal time
+    }
+  });
+}
+
+function setupWindowObserver() {
+  if (_windowObserver) _windowObserver.disconnect();
+  _windowObserver = new IntersectionObserver((entries) => {
+    let latestVisible = -1;
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = parseInt(entry.target.dataset.ayahIdx);
+        if (!isNaN(idx) && idx > latestVisible) latestVisible = idx;
+      }
+    });
+    if (latestVisible >= 0) updateWindow(latestVisible);
+  }, {
+    threshold: 0.1,
+    rootMargin: '-15% 0px -15% 0px' // fire when ayah is in the middle 70% of viewport
+  });
+  document.querySelectorAll('.ayah-block[data-ayah-idx]').forEach(b => _windowObserver.observe(b));
+}
+
+function updateWindow(currentIdx) {
+  if (!_windowEnabled) return;
+  const surah = SURAHS[currentSurah];
+  if (!surah) return;
+
+  const total = surah.ayahs.length;
+  const newStart = Math.max(0, currentIdx - WINDOW_RADIUS);
+  const newEnd = Math.min(total - 1, currentIdx + WINDOW_RADIUS);
+
+  // Nothing to change
+  if (newStart >= _windowStart && newEnd <= _windowEnd) return;
+
+  const container = document.getElementById('ayahsContainer');
+
+  // Remove blocks that scrolled past at the top
+  for (let i = _windowStart; i < newStart; i++) {
+    const block = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
+    if (block) {
+      const revealed = [];
+      block.querySelectorAll('.word.revealed, .word.fading').forEach(s => revealed.push(s.dataset.id));
+      _ayahMemoryState[i] = revealed;
+      _windowObserver.unobserve(block);
+      block.remove();
+    }
+  }
+
+  // Remove blocks that scrolled past at the bottom
+  for (let i = newEnd + 1; i <= _windowEnd; i++) {
+    const block = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
+    if (block) {
+      const revealed = [];
+      block.querySelectorAll('.word.revealed, .word.fading').forEach(s => revealed.push(s.dataset.id));
+      _ayahMemoryState[i] = revealed;
+      _windowObserver.unobserve(block);
+      block.remove();
+    }
+  }
+
+  // Add new blocks at the top (use DocumentFragment to avoid layout thrash)
+  if (newStart < _windowStart) {
+    const frag = document.createDocumentFragment();
+    for (let i = newStart; i < _windowStart; i++) {
+      if (!container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`)) {
+        const block = createAyahBlock(i, surah, false);
+        restoreAyahState(block, i);
+        frag.appendChild(block);
+      }
+    }
+    const firstBlock = container.querySelector('.ayah-block');
+    if (firstBlock) container.insertBefore(frag, firstBlock);
+    else container.appendChild(frag);
+    // Observe newly added top blocks
+    for (let i = newStart; i < _windowStart; i++) {
+      const b = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
+      if (b) _windowObserver.observe(b);
+    }
+  }
+
+  // Add new blocks at the bottom
+  if (newEnd > _windowEnd) {
+    const nextCard = container.querySelector('.next-surah-card');
+    for (let i = _windowEnd + 1; i <= newEnd; i++) {
+      if (!container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`)) {
+        const block = createAyahBlock(i, surah, false);
+        restoreAyahState(block, i);
+        if (nextCard) container.insertBefore(block, nextCard);
+        else container.appendChild(block);
+        _windowObserver.observe(block);
+      }
+    }
+  }
+
+  _windowStart = newStart;
+  _windowEnd = newEnd;
 }
 
 // ── Audio Engine ──
@@ -832,8 +1034,8 @@ async function initApi() {
 initApi();
 
 const savedTheme = localStorage.getItem('tasmi3_theme');
-if (savedTheme === 'light') {
-  setTheme('light');
+if (savedTheme === 'dark') {
+  setTheme('dark');
 } else {
-  setTheme('dark'); // default
+  setTheme('light'); // default is now light
 }
