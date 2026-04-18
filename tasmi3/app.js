@@ -151,6 +151,17 @@ function toggleHeader() {
   }
 }
 
+function toggleBottomBar() {
+  const bar = document.querySelector('.bottom-bar');
+  const btn = document.getElementById('btnBottomToggle');
+  bar.classList.toggle('collapsed');
+  if (bar.classList.contains('collapsed')) {
+    btn.innerHTML = '▲';
+  } else {
+    btn.innerHTML = '▼';
+  }
+}
+
 function toggleSurahStatus(val) {
   if (!currentSurah) return;
   const statuses = JSON.parse(localStorage.getItem('tasmi3_surah_status') || '{}');
