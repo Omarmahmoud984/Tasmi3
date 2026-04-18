@@ -10,31 +10,24 @@ let currentSurah = 1;
 let isHardcoreMode = false;
 let wordTimers = {};
 
-// ── Windowed Rendering State ──
-const WINDOW_RADIUS = 12;
-const WINDOW_MIN_AYAHS = 300 ; // only activate for surahs with > 100 ayahs
-let _windowEnabled = false;
-let _windowStart = 0;
-let _windowEnd = 0;
-let _ayahMemoryState = {}; // { ayahIdx: [wordId,...] } for out-of-window revealed state
-let _windowObserver = null;
+// ── Progressive Loading State ──
+const BATCH_SIZE = 25;
+let _loadedUpTo = 0;
+let _savedWordsForCurrentSurah = []; // words saved from prev session for not-yet-rendered ayahs
+let _scrollListener = null;
 
 function saveRevealedState() {
   const revealedWords = [];
   document.querySelectorAll('.word.revealed, .word.fading').forEach(span => {
     revealedWords.push(span.dataset.id);
   });
-  // Merge out-of-window ayah state so we never lose progress
-  if (_windowEnabled) {
-    Object.keys(_ayahMemoryState).forEach(idxStr => {
-      const idx = parseInt(idxStr);
-      if (idx < _windowStart || idx > _windowEnd) {
-        (_ayahMemoryState[idx] || []).forEach(wid => {
-          if (!revealedWords.includes(wid)) revealedWords.push(wid);
-        });
-      }
-    });
-  }
+  // Also preserve saved words for ayahs not yet rendered in the DOM
+  _savedWordsForCurrentSurah.forEach(wordId => {
+    const ayahIdx = parseInt(wordId.split('-')[0]);
+    if (ayahIdx >= _loadedUpTo && !revealedWords.includes(wordId)) {
+      revealedWords.push(wordId);
+    }
+  });
   const saved = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
   saved[currentSurah] = revealedWords;
   localStorage.setItem('tasmi3_revealed_state', JSON.stringify(saved));
@@ -264,8 +257,9 @@ async function loadSurah(id) {
   Object.values(wordTimers).forEach(clearTimeout);
   wordTimers = {};
   stopAllAudio();
-  _ayahMemoryState = {};
-  if (_windowObserver) { _windowObserver.disconnect(); _windowObserver = null; }
+  _loadedUpTo = 0;
+  _savedWordsForCurrentSurah = [];
+  if (_scrollListener) { window.removeEventListener('scroll', _scrollListener); _scrollListener = null; }
 
   const btnPlayWhole = document.getElementById('btnPlayWholeSurah');
   if (btnPlayWhole) {
@@ -275,46 +269,29 @@ async function loadSurah(id) {
   const container = document.getElementById('ayahsContainer');
   container.innerHTML = '';
 
-  // Compute totalWords for ALL ayahs upfront (windowing must not affect the count)
+  // Compute totalWords for ALL ayahs upfront
   totalWords = surah.ayahs.reduce((sum, ayah) => sum + ayah.split(' ').length, 0);
 
-  // Windowing: only for long surahs (> 100 ayahs)
-  _windowEnabled = surah.ayahs.length > WINDOW_MIN_AYAHS;
-  _windowStart = 0;
-  _windowEnd = _windowEnabled
-    ? Math.min(WINDOW_RADIUS * 2, surah.ayahs.length - 1)
-    : surah.ayahs.length - 1;
-
-  // Render initial window
-  for (let idx = _windowStart; idx <= _windowEnd; idx++) {
-    container.appendChild(createAyahBlock(idx, surah, idx < 12));
-  }
-
+  // Load saved state & count all previously revealed words upfront (even for unrendered ayahs)
   const savedState = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
-  if (savedState[id]) {
-    savedState[id].forEach(wordId => {
-      const ayahIdx = parseInt(wordId.split('-')[0]);
-      if (_windowEnabled && (ayahIdx < _windowStart || ayahIdx > _windowEnd)) {
-        // Out-of-window: store in memory and count it
-        if (!_ayahMemoryState[ayahIdx]) _ayahMemoryState[ayahIdx] = [];
-        _ayahMemoryState[ayahIdx].push(wordId);
-        revealedCount++;
-      } else {
-        const span = container.querySelector(`.word[data-id="${wordId}"]`);
-        if (span) {
-          span.classList.remove('hidden', 'fading');
-          span.classList.add('revealed');
-          revealedCount++;
-        }
-      }
-    });
+  _savedWordsForCurrentSurah = savedState[id] || [];
+  revealedCount = _savedWordsForCurrentSurah.length;
+
+  // Render first batch of ayahs
+  const initialEnd = Math.min(BATCH_SIZE, surah.ayahs.length);
+  for (let idx = 0; idx < initialEnd; idx++) {
+    const block = createAyahBlock(idx, surah, idx < 12);
+    _restoreBlockState(block, idx);
+    container.appendChild(block);
   }
+  _loadedUpTo = initialEnd;
 
   localStorage.setItem('tasmi3_last_surah', id);
   updateStats();
 
-  // Start IntersectionObserver for windowed surahs
-  if (_windowEnabled) setupWindowObserver();
+  // Setup append-only progressive scroll loading (no jumps — we never remove from top)
+  _scrollListener = function () { _loadMoreAyahs(); };
+  window.addEventListener('scroll', _scrollListener, { passive: true });
 
   // Next surah card — prefer in-memory SURAHS cache, fall back to select option
   const nextId = parseInt(id) < 114 ? parseInt(id) + 1 : null;
@@ -529,16 +506,17 @@ function revealAll() {
     span.classList.remove('hidden', 'fading', 'hinted');
     span.classList.add('revealed');
   });
-  // Also mark all out-of-window ayahs as fully revealed in memory
-  if (_windowEnabled) {
-    const surah = SURAHS[currentSurah];
-    if (surah) {
-      surah.ayahs.forEach((ayah, idx) => {
-        if (idx < _windowStart || idx > _windowEnd) {
-          _ayahMemoryState[idx] = ayah.split(' ').map((_, wi) => `${idx}-${wi}`);
-        }
-      });
-    }
+  // Also mark all not-yet-rendered ayahs as fully revealed so progress is saved
+  const surahForReveal = SURAHS[currentSurah];
+  if (surahForReveal) {
+    const allWordIds = [];
+    surahForReveal.ayahs.forEach((ayah, idx) => {
+      ayah.split(' ').forEach((_, wi) => allWordIds.push(`${idx}-${wi}`));
+    });
+    _savedWordsForCurrentSurah = allWordIds;
+    const savedAll = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
+    savedAll[currentSurah] = allWordIds;
+    localStorage.setItem('tasmi3_revealed_state', JSON.stringify(savedAll));
   }
   revealedCount = totalWords;
   updateStats();
@@ -567,7 +545,53 @@ function updateStats() {
   }
 }
 
-// ── Windowed Rendering Functions ──
+// ── Progressive Loading Functions ──
+
+// Restore revealed state for a freshly created block (from saved localStorage data)
+function _restoreBlockState(block, idx) {
+  _savedWordsForCurrentSurah.forEach(wordId => {
+    if (parseInt(wordId.split('-')[0]) !== idx) return;
+    const span = block.querySelector(`.word[data-id="${wordId}"]`);
+    if (span) {
+      span.classList.remove('hidden', 'fading');
+      span.classList.add('revealed');
+    }
+  });
+}
+
+// Append the next batch of ayahs when the user scrolls near the bottom
+function _loadMoreAyahs() {
+  const surah = SURAHS[currentSurah];
+  if (!surah || _loadedUpTo >= surah.ayahs.length) return;
+
+  // Only load when within 400px of the bottom
+  const scrollBottom = window.scrollY + window.innerHeight;
+  const docHeight = document.documentElement.scrollHeight;
+  if (scrollBottom < docHeight - 400) return;
+
+  const container = document.getElementById('ayahsContainer');
+  if (!container) return;
+  const nextCard = container.querySelector('.next-surah-card');
+
+  const end = Math.min(_loadedUpTo + BATCH_SIZE, surah.ayahs.length);
+  const frag = document.createDocumentFragment();
+  for (let idx = _loadedUpTo; idx < end; idx++) {
+    const block = createAyahBlock(idx, surah, false);
+    _restoreBlockState(block, idx);
+    frag.appendChild(block);
+  }
+  // Always append at bottom — never insert above viewport = zero scroll jumps
+  if (nextCard) container.insertBefore(frag, nextCard);
+  else container.appendChild(frag);
+
+  _loadedUpTo = end;
+
+  // If all ayahs are now rendered, remove the scroll listener
+  if (_loadedUpTo >= surah.ayahs.length && _scrollListener) {
+    window.removeEventListener('scroll', _scrollListener);
+    _scrollListener = null;
+  }
+}
 
 function createAyahBlock(idx, surah, animate) {
   const ayah = surah.ayahs[idx];
@@ -659,113 +683,6 @@ function createAyahBlock(idx, surah, animate) {
   return block;
 }
 
-function restoreAyahState(block, idx) {
-  const revealed = _ayahMemoryState[idx];
-  if (!revealed || revealed.length === 0) return;
-  revealed.forEach(wordId => {
-    const span = block.querySelector(`.word[data-id="${wordId}"]`);
-    if (span) {
-      span.classList.remove('hidden', 'fading');
-      span.classList.add('revealed');
-      // Do NOT increment revealedCount — already counted at load/reveal time
-    }
-  });
-}
-
-function setupWindowObserver() {
-  if (_windowObserver) _windowObserver.disconnect();
-  _windowObserver = new IntersectionObserver((entries) => {
-    let latestVisible = -1;
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const idx = parseInt(entry.target.dataset.ayahIdx);
-        if (!isNaN(idx) && idx > latestVisible) latestVisible = idx;
-      }
-    });
-    if (latestVisible >= 0) updateWindow(latestVisible);
-  }, {
-    threshold: 0.1,
-    rootMargin: '-15% 0px -15% 0px' // fire when ayah is in the middle 70% of viewport
-  });
-  document.querySelectorAll('.ayah-block[data-ayah-idx]').forEach(b => _windowObserver.observe(b));
-}
-
-function updateWindow(currentIdx) {
-  if (!_windowEnabled) return;
-  const surah = SURAHS[currentSurah];
-  if (!surah) return;
-
-  const total = surah.ayahs.length;
-  const newStart = Math.max(0, currentIdx - WINDOW_RADIUS);
-  const newEnd = Math.min(total - 1, currentIdx + WINDOW_RADIUS);
-
-  // Nothing to change
-  if (newStart >= _windowStart && newEnd <= _windowEnd) return;
-
-  const container = document.getElementById('ayahsContainer');
-
-  // Remove blocks that scrolled past at the top
-  for (let i = _windowStart; i < newStart; i++) {
-    const block = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
-    if (block) {
-      const revealed = [];
-      block.querySelectorAll('.word.revealed, .word.fading').forEach(s => revealed.push(s.dataset.id));
-      _ayahMemoryState[i] = revealed;
-      _windowObserver.unobserve(block);
-      block.remove();
-    }
-  }
-
-  // Remove blocks that scrolled past at the bottom
-  for (let i = newEnd + 1; i <= _windowEnd; i++) {
-    const block = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
-    if (block) {
-      const revealed = [];
-      block.querySelectorAll('.word.revealed, .word.fading').forEach(s => revealed.push(s.dataset.id));
-      _ayahMemoryState[i] = revealed;
-      _windowObserver.unobserve(block);
-      block.remove();
-    }
-  }
-
-  // Add new blocks at the top (use DocumentFragment to avoid layout thrash)
-  if (newStart < _windowStart) {
-    const frag = document.createDocumentFragment();
-    for (let i = newStart; i < _windowStart; i++) {
-      if (!container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`)) {
-        const block = createAyahBlock(i, surah, false);
-        restoreAyahState(block, i);
-        frag.appendChild(block);
-      }
-    }
-    const firstBlock = container.querySelector('.ayah-block');
-    if (firstBlock) container.insertBefore(frag, firstBlock);
-    else container.appendChild(frag);
-    // Observe newly added top blocks
-    for (let i = newStart; i < _windowStart; i++) {
-      const b = container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
-      if (b) _windowObserver.observe(b);
-    }
-  }
-
-  // Add new blocks at the bottom
-  if (newEnd > _windowEnd) {
-    const nextCard = container.querySelector('.next-surah-card');
-    for (let i = _windowEnd + 1; i <= newEnd; i++) {
-      if (!container.querySelector(`.ayah-block[data-ayah-idx="${i}"]`)) {
-        const block = createAyahBlock(i, surah, false);
-        restoreAyahState(block, i);
-        if (nextCard) container.insertBefore(block, nextCard);
-        else container.appendChild(block);
-        _windowObserver.observe(block);
-      }
-    }
-  }
-
-  _windowStart = newStart;
-  _windowEnd = newEnd;
-}
-
 // ── Audio Engine ──
 function getAyahUrl(surahId, ayahNum) {
   const reciter = document.getElementById('reciterSelect').value;
@@ -806,6 +723,19 @@ function toggleMushafMode() {
   isMushafMode = !isMushafMode;
   const container = document.getElementById('ayahsContainer');
   const btn = document.getElementById('btnMushaf');
+
+  // Find the ayah block closest to the center of the viewport BEFORE layout changes
+  const blocks = container.querySelectorAll('.ayah-block');
+  let anchorBlock = null;
+  const viewportCenter = window.innerHeight / 2;
+  let bestDist = Infinity;
+  blocks.forEach(b => {
+    const rect = b.getBoundingClientRect();
+    const blockCenter = rect.top + rect.height / 2;
+    const dist = Math.abs(blockCenter - viewportCenter);
+    if (dist < bestDist) { bestDist = dist; anchorBlock = b; }
+  });
+
   if (isMushafMode) {
     container.classList.add('mushaf-mode');
     btn.style.background = 'rgba(212,168,83,0.15)';
@@ -814,6 +744,13 @@ function toggleMushafMode() {
     container.classList.remove('mushaf-mode');
     btn.style.background = 'transparent';
     btn.style.borderColor = 'var(--gold-line)';
+  }
+
+  // After layout reflows, scroll back to the same ayah
+  if (anchorBlock) {
+    requestAnimationFrame(() => {
+      anchorBlock.scrollIntoView({ block: 'center' });
+    });
   }
 }
 
