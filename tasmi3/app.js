@@ -12,7 +12,7 @@ let wordTimers = {};
 
 // ── Windowed Rendering State ──
 const WINDOW_RADIUS = 12;
-const WINDOW_MIN_AYAHS = 100; // only activate for surahs with > 100 ayahs
+const WINDOW_MIN_AYAHS = 300 ; // only activate for surahs with > 100 ayahs
 let _windowEnabled = false;
 let _windowStart = 0;
 let _windowEnd = 0;
