@@ -220,10 +220,30 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          // Check for updates immediately on every page load
+          registration.update();
+
+          // When a new SW is found and installed, reload to activate it
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'activated') {
+                window.location.reload();
+              }
+            });
+          });
         }).catch(error => {
           console.log('ServiceWorker registration failed: ', error);
         });
+      });
+
+      // Also reload when the new SW takes control mid-session
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
     }
   </script>
