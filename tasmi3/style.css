@@ -2203,18 +2203,11 @@ header.collapsed .btn-header-toggle {
 /* Tabs Header */
 .tabs-header {
   display: flex;
-  flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--gold-line);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.tabs-header::-webkit-scrollbar {
-  display: none;
 }
 .tab-btn {
   flex: 1;
-  flex-shrink: 0;
   min-height: 55px;
   padding: 12px 15px;
   background: transparent;
@@ -2226,7 +2219,15 @@ header.collapsed .btn-header-toggle {
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .tab-btn {
+    font-size: 0.85rem;
+    padding: 8px 4px;
+    min-height: 45px;
+  }
 }
 .tab-btn:hover {
   color: var(--gold);
