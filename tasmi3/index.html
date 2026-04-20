@@ -32,12 +32,19 @@
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link active">الرئيسية</a>
+      <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
       <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
       <a href="good.html" class="nav-link">جيد 🟡</a>
       <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
+
       <button id="btnInstallApp" class="nav-link"
         style="display:block; text-align:right; border:1px solid var(--gold); background:var(--gold-dim); color:var(--gold); font-weight:bold; cursor:pointer; margin-top:20px; font-size:1rem; border-radius:8px;"
         onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
+
+      <div class="nav-toggle-row">
+        <span>إشعارات الصلاة على النبي ﷺ</span>
+        <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
+      </div>
     </div>
   </div>
 
@@ -64,8 +71,16 @@
           <span>دوس على علامة الآية (۝) عشان تكشف الآية كلها دفعة واحدة</span>
         </div>
         <div class="tut-step">
-          <span class="tut-icon">📖</span>
+          <span class="tut-icon">👁️</span>
           <span>زر <b>إظهار الآية</b> في الأسفل بيكشف الآيات واحدة واحدة بالترتيب وبذكاء</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📖</span>
+          <span>علامة الكتاب (📖) بجانب أي آية تفتح <b>التفسير</b> المباشر (ميسر، ابن كثير، طبري)</span>
+        </div>
+        <div class="tut-step">
+          <span class="tut-icon">📿</span>
+          <span>من القائمة الجانبية (☰) يمكنك الدخول لصفحة <b>الأذكار</b> الشاملة مع عداد ذكي وفضل كل ذكر</span>
         </div>
         <div class="tut-step">
           <span class="tut-icon">📜</span>
@@ -96,6 +111,11 @@
           <span class="tut-icon">📚</span>
           <span>التطبيق الآن يحتوي على <b>المصحف الشريف بالكامل</b> (١١٤ سورة).</span>
         </div>
+        <div class="tut-step">
+          <span class="tut-icon">📲</span>
+          <span>يمكنك <b>تثبيت التطبيق</b> على هاتفك للرجوع إليه بسهولة وتحديثه من القائمة الجانبية.</span>
+        </div>
+
       </div>
       <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
     </div>
@@ -217,11 +237,33 @@
     </div>
   </div>
 
+
+  <!-- Tafsir Modal -->
+  <div class="custom-modal-overlay" id="tafsirModal" onclick="closeTafsirModal(event)">
+    <div class="custom-modal" onclick="event.stopPropagation()">
+      <div class="custom-modal-header">
+        <h3 class="custom-modal-title">تفسير الآية <span id="tafsirAyahNum"></span></h3>
+        <button class="custom-modal-close" onclick="closeTafsirModal()">×</button>
+      </div>
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTafsirTab(16, this)">التفسير الميسر</button>
+        <button class="tab-btn" onclick="switchTafsirTab(14, this)">ابن كثير</button>
+        <button class="tab-btn" onclick="switchTafsirTab(15, this)">الطبري</button>
+      </div>
+      <div class="custom-modal-body" id="tafsirContent">
+        <!-- Content injects here via JS -->
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(registration => {
+          // Store globally so startApp() can call update() before entering
+          window._swReg = registration;
+
           // Check for updates immediately on every page load
           registration.update();
 

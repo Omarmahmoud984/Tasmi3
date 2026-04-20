@@ -33,6 +33,7 @@
 
 body.theme-light {
   --bg: #f9f6f0;
+  --bg2: #ffffff;
   --surface: rgba(0, 0, 0, 0.03);
   --gold: #ad7d2b;
   --gold2: #7a530f;
@@ -2018,6 +2019,38 @@ header.collapsed .btn-header-toggle {
   transform: translateX(-100%);
 }
 
+.theme-light #navSidebar {
+  background: #ffffff;
+  border-left: none;
+  border-right: 1px solid var(--gold-line);
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Nav sidebar toggle row for dhikr setting */
+.nav-toggle-row {
+  margin-top: 15px;
+  border-top: 1px dashed var(--gold-line);
+  padding-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-toggle-row span {
+  color: var(--text2);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.nav-toggle-row input[type="checkbox"] {
+  transform: scale(1.3);
+  accent-color: var(--gold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .tasbeeh-circle {
   width: 180px;
   height: 180px;
@@ -2073,3 +2106,166 @@ header.collapsed .btn-header-toggle {
   background: rgba(255, 100, 100, 0.1);
   border-color: #ff8888;
 }
+
+/* =========================================
+   MODAL & TABS SYSTEM (Tafsir & Adhkar)
+========================================= */
+
+/* Tafsir Icon next to Ayah */
+.tafsir-icon {
+  display: inline-block;
+  font-size: 1.2rem;
+  margin-right: 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+}
+.tafsir-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+.tafsir-icon:active {
+  transform: scale(0.95);
+}
+
+/* Modal Overlay */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.custom-modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Modal Box */
+.custom-modal {
+  background: var(--header-bg);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+.custom-modal-overlay.show .custom-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* Modal Header */
+.custom-modal-header {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gold-line);
+  background: var(--surface);
+}
+.custom-modal-title {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin: 0;
+}
+.custom-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0 5px;
+}
+.custom-modal-close:hover {
+  color: #ff5555;
+  transform: scale(1.1);
+}
+
+/* Tabs Header */
+.tabs-header {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--gold-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs-header::-webkit-scrollbar {
+  display: none;
+}
+.tab-btn {
+  flex: 1;
+  flex-shrink: 0;
+  min-height: 55px;
+  padding: 12px 15px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text2);
+  font-family: 'Cairo', sans-serif;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover {
+  color: var(--gold);
+  background: rgba(212, 168, 83, 0.05);
+}
+.tab-btn.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(212, 168, 83, 0.1);
+}
+
+/* Modal Body */
+.custom-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--text);
+  font-family: 'Cairo', sans-serif;
+  flex: 1;
+}
+
+/* Tafsir Content Styling */
+.tafsir-content-wrap {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Spinner */
+.custom-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gold-dim);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tasmi3-v37-cache';
+const CACHE_NAME = 'tasmi3-v43-cache';
 const urlsToCache = [
   './index.html',
   './needs_review.html',
@@ -7,6 +7,9 @@ const urlsToCache = [
   './style.css',
   './app.js',
   './review_boards.js',
+  './adhkar.html',
+  './adhkar.js',
+  './adhkar_data.js',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap'
 ];
@@ -15,56 +18,44 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+    caches.keys().then(cacheNames =>
+      Promise.all(
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) return caches.delete(name);
         })
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
-  // Only intercept GET requests
   if (event.request.method !== 'GET') return;
-
-  // Exclude audio files from service worker cache (let browser handle audio caching)
   if (event.request.url.endsWith('.mp3')) return;
+  if (event.request.url.includes('api.alquran.cloud') || event.request.url.includes('api.quran.com')) return;
 
-  // Optional: Do not cache API calls via service worker since we use localStorage for them
-  if (event.request.url.includes('api.alquran.cloud')) return;
-
+  // NETWORK-FIRST STRATEGY:
+  // Always try network first so users always get the latest code.
+  // Only fall back to cache when offline.
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
+    fetch(event.request)
+      .then(networkResponse => {
+        // Clone and cache the fresh response
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-        return fetch(event.request).then(
-          response => {
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            let responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
-          }
-        );
+        return networkResponse;
+      })
+      .catch(() => {
+        // Network failed — serve from cache (offline fallback)
+        return caches.match(event.request);
       })
   );
 });

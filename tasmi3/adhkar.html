@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الأذكار — tasmi3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    /* Specific styles for Adhkar page to keep main css clean */
+    .adhkar-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px 16px 130px;
+    }
+    .dhikr-card {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+    .dhikr-card.completed {
+      background: rgba(42, 107, 79, 0.1); /* light green */
+      border-color: var(--green2);
+    }
+    .dhikr-card:hover {
+      border-color: var(--gold-line);
+    }
+    .dhikr-text {
+      font-size: 1.3rem;
+      line-height: 1.8;
+      font-family: 'Cairo', sans-serif;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .dhikr-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--gold-line);
+      padding-top: 12px;
+    }
+    .dhikr-count-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s;
+    }
+    .dhikr-count-circle:active {
+      transform: scale(0.9);
+    }
+    .dhikr-count-circle.finished {
+      background: var(--green2);
+      border-color: var(--green);
+      color: white;
+    }
+    .dhikr-info-icon {
+      font-size: 1.4rem;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dhikr-info-icon:hover {
+      color: var(--blue2);
+      transform: scale(1.1);
+    }
+    .dhikr-expand-btn {
+      background: none;
+      border: none;
+      color: var(--gold);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    .sub-dhikr-container {
+      display: none;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed var(--gold-line);
+    }
+    .sub-dhikr-container.show {
+      display: block;
+    }
+    .sub-dhikr-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .sub-dhikr-item:last-child {
+      margin-bottom: 0;
+    }
+    .sub-dhikr-text {
+      font-size: 1.2rem;
+      font-family: 'Cairo', sans-serif;
+      color: var(--text);
+    }
+    .sub-circle {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation Sidebar -->
+  <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
+  <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+      <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
+      <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="adhkar.html" class="nav-link active" style="color: var(--gold);">الأذكار 📿</a>
+      <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
+      <a href="good.html" class="nav-link">جيد 🟡</a>
+      <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
+
+      <button id="btnInstallApp" class="nav-link"
+        style="display:block; text-align:right; border:1px solid var(--gold); background:var(--gold-dim); color:var(--gold); font-weight:bold; cursor:pointer; margin-top:20px; font-size:1rem; border-radius:8px;"
+        onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
+
+      <div class="nav-toggle-row">
+        <span>إشعارات الصلاة على النبي ﷺ</span>
+        <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
+      </div>
+    </div>
+  </div>
+
+  <header style="flex-direction: row; justify-content: space-between; padding: 12px 20px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button class="btn-nav" onclick="window.location.href='index.html'" style="font-size: 1.2rem;">← رجوع</button>
+      <h1 style="color: var(--gold); font-family: 'Cairo'; margin: 0; font-size: 1.3rem;">الأذكار 📿</h1>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div class="theme-toggle" style="margin:0;">
+        <button id="btnThemeDark" onclick="setAdhkarTheme('dark')">🌙</button>
+        <button id="btnThemeLight" onclick="setAdhkarTheme('light')">☀️</button>
+      </div>
+      <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s; height: 36px;">☰</button>
+    </div>
+  </header>
+
+  <div class="adhkar-container">
+    <div class="tabs-header" style="border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; border: 1px solid var(--gold-line);">
+      <button class="tab-btn active" onclick="switchAdhkarTab('morning', this)">أذكار الصباح</button>
+      <button class="tab-btn" onclick="switchAdhkarTab('evening', this)">أذكار المساء</button>
+      <button class="tab-btn" onclick="switchAdhkarTab('after_prayer', this)">بعد الصلاة</button>
+      <button class="tab-btn" onclick="switchAdhkarTab('sleep', this)">أذكار النوم</button>
+    </div>
+
+    <div id="adhkarList">
+      <!-- List will be populated by JS -->
+    </div>
+  </div>
+
+  <!-- Dhikr Info Modal -->
+  <div class="custom-modal-overlay" id="dhikrInfoModal" onclick="closeDhikrModal(event)">
+    <div class="custom-modal" onclick="event.stopPropagation()">
+      <div class="custom-modal-header">
+        <h3 class="custom-modal-title">فضل الذكر</h3>
+        <button class="custom-modal-close" onclick="closeDhikrModal()">×</button>
+      </div>
+      <div class="custom-modal-body">
+        <p id="dhikrRef" style="color: var(--text2); font-size: 0.95rem; margin-bottom: 10px;"></p>
+        <p id="dhikrFadhilah" style="color: var(--gold); font-size: 1.1rem; line-height: 1.6; font-weight: bold;"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="adhkar_data.js"></script>
+  <script src="adhkar.js"></script>
+</body>
+</html>

@@ -24,15 +24,28 @@
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
       <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
       <a href="good.html" class="nav-link">جيد 🟡</a>
       <a href="perfect.html" class="nav-link active">ممتاز 🟢</a>
+
+      <button id="btnInstallApp" class="nav-link"
+        style="display:block; text-align:right; border:1px solid var(--gold); background:var(--gold-dim); color:var(--gold); font-weight:bold; cursor:pointer; margin-top:20px; font-size:1rem; border-radius:8px;"
+        onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
+
+      <div class="nav-toggle-row">
+        <span>إشعارات الصلاة على النبي ﷺ</span>
+        <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
+      </div>
     </div>
   </div>
 
   <div class="header-compact">
-    <h1 class="page-title">🟢 سور حفظها ممتاز ومتين</h1>
-    <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 6px 12px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">☰ القائمة</button>
+    <h1 class="page-title" style="font-size: 1.3rem;">🟢 حفظها ممتاز ومتين</h1>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="good.html" style="background: rgba(255,193,7,0.2); border: 1px solid var(--gold); color: var(--text); padding: 4px 8px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; white-space: nowrap;">🟡 السابق</a>
+      <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">☰</button>
+    </div>
   </div>
 
   <div class="board-container" id="boardContainer"></div>

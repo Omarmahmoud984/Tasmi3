@@ -82,3 +82,22 @@ const savedTheme = localStorage.getItem('tasmi3_theme');
 if (savedTheme === 'light') {
   document.body.classList.add('theme-light');
 }
+
+// Global Sidebar Actions for Sub-pages
+function installApp() {
+  window.location.href = 'index.html'; // Go to homepage to trigger built-in install logic
+}
+
+function toggleDhikrPopupSetting(checkbox) {
+  const enabled = checkbox.checked;
+  localStorage.setItem('tasmi3_dhikr_popup_enabled', String(enabled));
+}
+
+// Sync check on load
+document.addEventListener('DOMContentLoaded', () => {
+  const popCheck = document.getElementById('toggleDhikrPopup');
+  if (popCheck) {
+    const saved = localStorage.getItem('tasmi3_dhikr_popup_enabled');
+    popCheck.checked = saved === null ? true : saved === 'true';
+  }
+});

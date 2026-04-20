@@ -1,6 +1,19 @@
 // ── Data ──
 const SURAHS = {};
 
+// Clean up old broken chapter-wide tafsir caches
+try {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('tasmi3_tafsir_') && key.split('_').length === 4) {
+      // old format was tasmi3_tafsir_{tafsirId}_{surah} (4 parts)
+      // new format is tasmi3_tafsir_{tafsirId}_{surah}_{ayah} (5 parts)
+      localStorage.removeItem(key);
+    }
+  }
+} catch(e) {}
+
+
 
 // ── State ──
 let hideDelay = 4000;
@@ -75,11 +88,29 @@ window.installApp = async function () {
       deferredPrompt = null;
     }
   } else {
-    // If already installed or prompt unavailable, clicking it forces a cache reload for "updates"
-    showToast('جاري البحث عن تحديثات...');
+    // Force aggressive update: unregister SW and purge Cache Storage
+    showToast('جاري تحديث التطبيق وتنزيل أحدث نسخة...');
+    
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        // Delete all caches to force a clean update
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      } catch (err) { }
+    }
+    
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+      } catch (err) { }
+    }
+
     setTimeout(() => {
       window.location.reload(true);
-    }, 1000);
+    }, 1500);
   }
 };
 
@@ -88,7 +119,33 @@ function scheduleNextDhikr() {
   dhikrTimeout = setTimeout(showDhikrPopup, 120000);
 }
 
+function isDhikrPopupEnabled() {
+  const saved = localStorage.getItem('tasmi3_dhikr_popup_enabled');
+  return saved === null ? true : saved === 'true'; // default ON
+}
+
+function toggleDhikrPopupSetting(checkbox) {
+  const enabled = checkbox.checked;
+  localStorage.setItem('tasmi3_dhikr_popup_enabled', String(enabled));
+  if (!enabled) {
+    // immediately hide if shown
+    clearTimeout(dhikrTimeout);
+    clearTimeout(autoHideTimeout);
+    const popup = document.getElementById('globalDhikrPopup');
+    if (popup) popup.classList.remove('show');
+  } else {
+    // restart the cycle
+    clearTimeout(dhikrTimeout);
+    scheduleNextDhikr();
+  }
+}
+
 function showDhikrPopup() {
+  if (!isDhikrPopupEnabled()) {
+    // Don't show, don't reschedule
+    return;
+  }
+
   const popup = document.getElementById('globalDhikrPopup');
   const overlay = document.getElementById('overlay');
 
@@ -120,8 +177,16 @@ function closeDhikrPopup() {
   scheduleNextDhikr();
 }
 
-// Start the first cycle
-scheduleNextDhikr();
+// Init checkbox state from saved preference
+document.addEventListener('DOMContentLoaded', () => {
+  const cb = document.getElementById('toggleDhikrPopup');
+  if (cb) cb.checked = isDhikrPopupEnabled();
+});
+
+// Start the first cycle only if enabled
+if (isDhikrPopupEnabled()) {
+  scheduleNextDhikr();
+}
 
 // ── Tasbeeh Logic ──
 let tasbeehCount = 0;
@@ -204,7 +269,37 @@ function resetTasbeeh() {
   document.getElementById('tasbeehCircle').textContent = tasbeehCount;
 }
 
-function startApp() {
+async function startApp() {
+  const btn = document.querySelector('.overlay-btn');
+
+  // Check for SW update before proceeding
+  if ('serviceWorker' in navigator && window._swReg) {
+    try {
+      if (btn) {
+        btn.textContent = 'جاري التحقّق من التحديثات...';
+        btn.disabled = true;
+      }
+
+      // Trigger a network check for a new SW
+      await window._swReg.update();
+
+      if (window._swReg.installing || window._swReg.waiting) {
+        // A new version is being installed — reload will happen automatically
+        // via the controllerchange listener. Show feedback and wait.
+        if (btn) btn.textContent = '🔄 يتم تحديث التطبيق...';
+        // Safety fallback: if reload hasn't happened in 4s, force it
+        setTimeout(() => window.location.reload(true), 4000);
+        return;
+      }
+    } catch (e) {
+      // Network unavailable — proceed offline
+    }
+  }
+
+  _proceedStartApp();
+}
+
+function _proceedStartApp() {
   const ov = document.getElementById('overlay');
   ov.classList.add('hide');
   setTimeout(() => ov.style.display = 'none', 400);
@@ -225,14 +320,16 @@ async function loadSurah(id) {
     container.innerHTML = '<div style="text-align:center; color: var(--gold); font-size: 1.5rem; margin-top: 40px; animation: sajdaPulse 1.5s infinite;">جاري التحميل...</div>';
     try {
       let data;
-      const cached = localStorage.getItem('tasmi3_api_surah_' + id);
-      if (cached) {
-        data = JSON.parse(cached);
+      const surahApiUrl = 'https://api.alquran.cloud/v1/surah/' + id;
+      
+      let cachedSurah = localStorage.getItem('tasmi3_api_surah_' + id);
+      if (cachedSurah) {
+        data = JSON.parse(cachedSurah);
       } else {
-        const res = await fetch('https://api.alquran.cloud/v1/surah/' + id);
+        const res = await fetch(surahApiUrl);
         if (!res.ok) throw new Error('Network Error');
         data = await res.json();
-        try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch (e) { }
+        try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch(e){}
       }
 
       let ayahsList = [];
@@ -633,7 +730,6 @@ function createAyahBlock(idx, surah, animate) {
     if (wi < words.length - 1) textDiv.appendChild(document.createTextNode(' '));
   });
 
-  // Ayah end marker — tap to reveal full ayah
   const endMark = document.createElement('span');
   endMark.className = 'aya-end';
   endMark.textContent = ' ۝' + toArabicNum(idx);
@@ -650,6 +746,14 @@ function createAyahBlock(idx, surah, animate) {
     updateStats();
   });
   textDiv.appendChild(endMark);
+
+  // Tafsir Icon
+  const tafsirIcon = document.createElement('span');
+  tafsirIcon.className = 'tafsir-icon';
+  tafsirIcon.textContent = '📖';
+  tafsirIcon.title = 'تفسير الآية';
+  tafsirIcon.addEventListener('click', () => openTafsirModal(currentSurah, idx + 1));
+  textDiv.appendChild(tafsirIcon);
 
   // Sajda marker
   if (surah.sajda !== undefined && surah.sajda === idx) {
@@ -981,6 +1085,81 @@ async function initApi() {
 }
 initApi();
 
+
+
+
+// =========================================
+// TAFSIR MODAL SYSTEM
+// =========================================
+let currentTafsirContext = { surah: null, ayah: null };
+
+function openTafsirModal(surah, ayah) {
+  currentTafsirContext = { surah, ayah };
+  document.getElementById('tafsirAyahNum').textContent = toArabicNum(ayah - 1); // ayahNum starts from 1, toArabicNum adds 1, passing ayah-1 yields correct arabic num
+  
+  const modal = document.getElementById('tafsirModal');
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden'; // stop background scrolling
+  
+  // Reset tabs to default (Al-Muyassar -> id: 16)
+  const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
+  tabs.forEach(t => t.classList.remove('active'));
+  tabs[0].classList.add('active'); // 16 is first
+
+  loadTafsirContent(16, surah, ayah);
+}
+
+function closeTafsirModal(e) {
+  if (e && e.target && !e.target.classList.contains('custom-modal-overlay') && !e.target.classList.contains('custom-modal-close') && e.target.id !== 'tafsirModal') {
+    return;
+  }
+  const modal = document.getElementById('tafsirModal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function switchTafsirTab(tafsirId, btn) {
+  const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
+  tabs.forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const { surah, ayah } = currentTafsirContext;
+  if(surah && ayah) {
+    loadTafsirContent(tafsirId, surah, ayah);
+  }
+}
+
+async function loadTafsirContent(tafsirId, surah, ayah) {
+  const container = document.getElementById('tafsirContent');
+  container.innerHTML = '<div class="custom-spinner"></div>';
+  
+  try {
+    const cacheUrl = `https://api.quran.com/api/v4/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
+    let data;
+
+    const cacheKey = `tasmi3_tafsir_${tafsirId}_${surah}_${ayah}`;
+    let cachedTafsir = localStorage.getItem(cacheKey);
+
+    if (cachedTafsir) {
+      data = JSON.parse(cachedTafsir);
+    } else {
+      const res = await fetch(cacheUrl);
+      if (!res.ok) throw new Error('API Error');
+      data = await res.json();
+      try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e){}
+    }
+    
+    let textResult = data && data.tafsir && data.tafsir.text ? data.tafsir.text : 'لا يوجد تفسير متاح لهذه الآية حالياً.';
+
+    container.innerHTML = `<div class="tafsir-content-wrap">${textResult}</div>`;
+    container.scrollTop = 0;
+    
+  } catch (err) {
+    container.innerHTML = '<div style="text-align:center; color:#ff8888; font-family: Cairo; margin-top:20px;">حدث خطأ أثناء جلب التفسير. يرجى المحاولة لاحقاً أو التأكد من توفر الإنترنت.</div>';
+  }
+}
 const savedTheme = localStorage.getItem('tasmi3_theme');
 if (savedTheme === 'dark') {
   setTheme('dark');
