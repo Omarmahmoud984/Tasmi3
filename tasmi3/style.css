@@ -412,6 +412,7 @@ header.collapsed .btn-header-toggle {
   background: var(--surface);
   border: 1px solid var(--gold-dim);
   transition: border-color 0.3s, background 0.3s;
+  scroll-margin-top: 130px;
 }
 
 .ayah-block:hover {
@@ -1517,6 +1518,7 @@ header.collapsed .btn-header-toggle {
   margin: 0 1px;
   padding: 1px 3px;
   border-radius: 4px;
+  scroll-margin-top: 130px;
 }
 
 /* Hidden words in mushaf — inherit the border-bottom style, tweak spacing */
@@ -1550,33 +1552,43 @@ header.collapsed .btn-header-toggle {
 }
 
 /* Mushaf Ayah Options Popup */
+.mushaf-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.4));
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: popupFadeIn 0.2s ease;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
 .mushaf-ayah-popup {
-  display: inline-flex;
-  gap: 4px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
   background: var(--bg2);
   border: 1px solid var(--gold-line);
-  border-radius: 10px;
-  padding: 4px 6px;
-  margin: 0 4px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  vertical-align: middle;
-  animation: popupFadeIn 0.15s ease;
-  z-index: 50;
-  position: relative;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: popupScaleUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .theme-light .mushaf-ayah-popup {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
 }
 
 .mushaf-ayah-popup button {
   background: var(--surface);
   border: 1px solid var(--gold-line);
   color: var(--gold);
-  padding: 6px 12px;
+  padding: 10px 16px;
   border-radius: 8px;
   font-family: 'Cairo', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.15s;
@@ -1594,16 +1606,50 @@ header.collapsed .btn-header-toggle {
 }
 
 @keyframes popupFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Mobile mushaf — keep same look as desktop, only adjust padding */
+@keyframes popupScaleUp {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Mobile mushaf */
 @media (max-width: 480px) {
   .mushaf-page {
     padding: 24px 16px;
     border-radius: 12px;
   }
+  
+  .mushaf-text {
+    font-size: 1.6rem;
+    line-height: 3.2rem;
+  }
+
+  .mushaf-popup-overlay {
+    align-items: flex-end;
+    padding: 16px;
+  }
+
+  .mushaf-ayah-popup {
+    width: 100%;
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 20px;
+    animation: sheetSlideUp 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+
+  .mushaf-ayah-popup button {
+    padding: 14px;
+    font-size: 1.1rem;
+    width: 100%;
+  }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 

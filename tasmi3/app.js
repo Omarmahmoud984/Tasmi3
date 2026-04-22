@@ -33,6 +33,11 @@ const BATCH_SIZE = 25;
 let _loadedUpTo = 0;
 let _savedWordsForCurrentSurah = []; // words saved from prev session for not-yet-rendered ayahs
 let _scrollListener = null;
+let _lastInteractedAyah = 0;
+
+function _setInteraction(idx) {
+  _lastInteractedAyah = parseInt(idx);
+}
 
 function saveRevealedState() {
   const revealedWords = [];
@@ -46,6 +51,7 @@ function saveRevealedState() {
       revealedWords.push(wordId);
     }
   });
+  _savedWordsForCurrentSurah = revealedWords;
   const saved = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
   saved[currentSurah] = revealedWords;
   localStorage.setItem('tasmi3_revealed_state', JSON.stringify(saved));
@@ -411,9 +417,11 @@ async function loadSurah(id) {
   });
 
   _savedWordsForCurrentSurah = [];
+  _lastInteractedAyah = 0;
   Object.keys(ayahWordCounts).forEach(aIdxStr => {
     const aIdx = parseInt(aIdxStr);
     if (aIdx >= surah.ayahs.length) return;
+    if (aIdx > _lastInteractedAyah) _lastInteractedAyah = aIdx;
     const newWordsCount = surah.ayahs[aIdx].split(' ').filter(w => w.length > 0).length;
     const revealCount = Math.min(ayahWordCounts[aIdxStr], newWordsCount);
     for (let wIdx = 0; wIdx < revealCount; wIdx++) {
@@ -479,6 +487,9 @@ function revealWord(span) {
   if (!span.classList.contains('hidden') && !span.classList.contains('fading') && !span.classList.contains('hinted')) return;
 
   const id = span.dataset.id;
+  if (!id) return;
+  _setInteraction(id.split('-')[0]);
+
   if (wordTimers[id]) {
     clearTimeout(wordTimers[id]);
     delete wordTimers[id];
@@ -518,7 +529,7 @@ function changeNWords(delta) {
 function _ensureAyahsLoadedUpTo(targetIdx) {
   const surah = SURAHS[currentSurah];
   if (!surah || isMushafMode) return;
-  
+
   if (targetIdx >= _loadedUpTo) {
     const container = document.getElementById('ayahsContainer');
     const nextCard = container ? container.querySelector('.next-surah-card') : null;
@@ -536,28 +547,28 @@ function _ensureAyahsLoadedUpTo(targetIdx) {
 }
 
 function getNextTargetIndex() {
-  if (revealedCount >= totalWords && totalWords > 0) return -1;
-
   const surah = SURAHS[currentSurah];
   if (!surah) return -1;
+  if (revealedCount >= totalWords && totalWords > 0) return -1;
 
-  if (isMushafMode) {
-    const firstHidden = document.querySelector('.mushaf-page .word.hidden, .mushaf-page .word.fading, .mushaf-page .word.hinted');
-    if (firstHidden) return parseInt(firstHidden.dataset.ayah);
-    return -1;
-  }
+  const revealedSet = new Set(_savedWordsForCurrentSurah);
 
-  // Normal mode: find first block with a hidden word (perfectly tracks undos)
-  const blocks = document.querySelectorAll('.ayah-block');
-  for (let i = 0; i < blocks.length; i++) {
-    if (blocks[i].querySelector('.word.hidden, .word.fading, .word.hinted')) {
-      return parseInt(blocks[i].dataset.ayahIdx);
+  for (let i = _lastInteractedAyah; i < surah.ayahs.length; i++) {
+    const wordCount = surah.ayahs[i].split(' ').filter(w => w.length > 0).length;
+    let revealedInAyah = 0;
+    for (let w = 0; w < wordCount; w++) {
+      if (revealedSet.has(`${i}-${w}`)) revealedInAyah++;
     }
+    if (revealedInAyah < wordCount) return i;
   }
 
-  // If all currently rendered blocks are fully revealed, check if more exist
-  if (_loadedUpTo < surah.ayahs.length) {
-    return _loadedUpTo;
+  for (let i = 0; i < _lastInteractedAyah; i++) {
+    const wordCount = surah.ayahs[i].split(' ').filter(w => w.length > 0).length;
+    let revealedInAyah = 0;
+    for (let w = 0; w < wordCount; w++) {
+      if (revealedSet.has(`${i}-${w}`)) revealedInAyah++;
+    }
+    if (revealedInAyah < wordCount) return i;
   }
 
   return -1;
@@ -566,6 +577,8 @@ function getNextTargetIndex() {
 function revealNextAyah() {
   const targetIndex = getNextTargetIndex();
   if (targetIndex === -1) return;
+
+  _setInteraction(targetIndex);
 
   _ensureAyahsLoadedUpTo(targetIndex);
 
@@ -580,7 +593,7 @@ function revealNextAyah() {
         }
       });
       const firstWord = paragraph.querySelector(`.word[data-ayah="${targetIndex}"]`);
-      if (firstWord) firstWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (firstWord) firstWord.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   } else {
     const block = document.querySelector(`.ayah-block[data-ayah-idx="${targetIndex}"]`);
@@ -592,7 +605,7 @@ function revealNextAyah() {
           revealedCount++;
         }
       });
-      block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      block.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
@@ -610,19 +623,21 @@ function revealNWords() {
   let startIdx = getNextTargetIndex();
   if (startIdx === -1) startIdx = 0;
 
+  _setInteraction(startIdx);
+
   for (let i = startIdx; i < surah.ayahs.length && count < n; i++) {
     _ensureAyahsLoadedUpTo(i);
-    
+
     let container;
     if (isMushafMode) container = document.querySelector('.mushaf-text');
     else container = document.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
-    
+
     if (!container) continue;
 
-    const query = isMushafMode 
+    const query = isMushafMode
       ? `.word.hidden[data-ayah="${i}"], .word.fading[data-ayah="${i}"], .word.hinted[data-ayah="${i}"]`
       : `.word.hidden, .word.fading, .word.hinted`;
-      
+
     const hiddenWords = Array.from(container.querySelectorAll(query));
     for (let j = 0; j < hiddenWords.length && count < n; j++) {
       const word = hiddenWords[j];
@@ -824,6 +839,7 @@ function createAyahBlock(idx, surah, animate) {
   endMark.title = 'دوس لتظهر الآية كلها';
   endMark.style.cursor = 'pointer';
   endMark.addEventListener('click', () => {
+    _setInteraction(idx);
     block.querySelectorAll('.word').forEach(span => {
       if (span.classList.contains('hidden') || span.classList.contains('fading')) {
         span.classList.remove('hidden', 'fading', 'revealed');
@@ -862,6 +878,7 @@ function createAyahBlock(idx, surah, animate) {
   undoBtn.title = 'إخفاء الآية (تراجع)';
   undoBtn.innerHTML = '↺';
   undoBtn.addEventListener('click', () => {
+    _setInteraction(idx);
     let hidCount = 0;
     block.querySelectorAll('.word.revealed, .word.fading').forEach(span => {
       span.classList.remove('revealed', 'fading');
@@ -1001,20 +1018,19 @@ function toggleMushafMode() {
   _scrollToAyahIndex(scrollAyah);
 }
 
-// Close mushaf popup when clicking outside
-document.addEventListener('click', (e) => {
-  if (_activeMushafPopup && !_activeMushafPopup.contains(e.target)) {
-    _activeMushafPopup.remove();
-    _activeMushafPopup = null;
-  }
-});
-
 function _showMushafAyahPopup(marker, paragraph, idx) {
   // Close any existing popup
-  if (_activeMushafPopup) { _activeMushafPopup.remove(); _activeMushafPopup = null; }
+  const existingOverlay = document.getElementById('mushafPopupOverlay');
+  if (existingOverlay) existingOverlay.remove();
 
-  const popup = document.createElement('span');
+  const overlay = document.createElement('div');
+  overlay.id = 'mushafPopupOverlay';
+  overlay.className = 'mushaf-popup-overlay';
+  overlay.addEventListener('click', () => overlay.remove());
+
+  const popup = document.createElement('div');
   popup.className = 'mushaf-ayah-popup';
+  popup.addEventListener('click', (e) => e.stopPropagation());
 
   // Reveal button
   const revealBtn = document.createElement('button');
@@ -1022,6 +1038,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
   revealBtn.title = 'كشف كل كلمات الآية';
   revealBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    _setInteraction(idx);
     paragraph.querySelectorAll(`.word[data-ayah="${idx}"]`).forEach(span => {
       if (span.classList.contains('hidden') || span.classList.contains('fading') || span.classList.contains('hinted')) {
         span.classList.remove('hidden', 'fading', 'hinted');
@@ -1030,8 +1047,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
       }
     });
     updateStats();
-    popup.remove();
-    _activeMushafPopup = null;
+    overlay.remove();
   });
 
   // Undo button
@@ -1040,6 +1056,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
   undoBtn.title = 'إخفاء كل كلمات الآية';
   undoBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    _setInteraction(idx);
     let hidCount = 0;
     paragraph.querySelectorAll(`.word[data-ayah="${idx}"]`).forEach(span => {
       if (span.classList.contains('revealed') || span.classList.contains('fading')) {
@@ -1051,8 +1068,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
     revealedCount -= hidCount;
     if (revealedCount < 0) revealedCount = 0;
     updateStats();
-    popup.remove();
-    _activeMushafPopup = null;
+    overlay.remove();
   });
 
   // Play button
@@ -1066,8 +1082,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
     _ayahAudio = new Audio(getAyahUrl(currentSurah, ayahNum));
     _ayahAudio.play().catch(() => { });
     _ayahAudio.addEventListener('ended', () => { _ayahAudio = null; });
-    popup.remove();
-    _activeMushafPopup = null;
+    overlay.remove();
   });
 
   // Tafsir button
@@ -1077,8 +1092,7 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
   tafsirBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openTafsirModal(currentSurah, idx + 1);
-    popup.remove();
-    _activeMushafPopup = null;
+    overlay.remove();
   });
 
   popup.appendChild(revealBtn);
@@ -1086,9 +1100,8 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
   popup.appendChild(playBtn);
   popup.appendChild(tafsirBtn);
 
-  // Insert popup right after the marker
-  marker.insertAdjacentElement('afterend', popup);
-  _activeMushafPopup = popup;
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
 }
 
 // ── Mushaf Mode Renderer ──
@@ -1111,9 +1124,11 @@ function renderMushafMode(id) {
   });
 
   const savedWords = [];
+  _lastInteractedAyah = 0;
   Object.keys(ayahWordCounts).forEach(aIdxStr => {
     const aIdx = parseInt(aIdxStr);
     if (aIdx >= surah.ayahs.length) return;
+    if (aIdx > _lastInteractedAyah) _lastInteractedAyah = aIdx;
     const newWordsCount = surah.ayahs[aIdx].split(' ').filter(w => w.length > 0).length;
     const revealCount = Math.min(ayahWordCounts[aIdxStr], newWordsCount);
     for (let wIdx = 0; wIdx < revealCount; wIdx++) {
