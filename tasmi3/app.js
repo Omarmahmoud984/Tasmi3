@@ -1,17 +1,22 @@
 // ── Data ──
 const SURAHS = {};
 
-// Clean up old broken chapter-wide tafsir caches
+// ── Tafsir cache version — bump this when switching API endpoints ──
+// v3 = reverted to /tafsirs/by_ayah/ (the correct working endpoint)
+const TAFSIR_CACHE_VERSION = 'v3';
+const _tafsirVersionKey = 'tasmi3_tafsir_cache_ver';
 try {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('tasmi3_tafsir_') && key.split('_').length === 4) {
-      // old format was tasmi3_tafsir_{tafsirId}_{surah} (4 parts)
-      // new format is tasmi3_tafsir_{tafsirId}_{surah}_{ayah} (5 parts)
-      localStorage.removeItem(key);
+  if (localStorage.getItem(_tafsirVersionKey) !== TAFSIR_CACHE_VERSION) {
+    // Purge all stale tafsir cache entries fetched with the old endpoint
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('tasmi3_tafsir_')) keysToRemove.push(key);
     }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(_tafsirVersionKey, TAFSIR_CACHE_VERSION);
   }
-} catch(e) {}
+} catch (e) { }
 
 
 
@@ -90,7 +95,7 @@ window.installApp = async function () {
   } else {
     // Force aggressive update: unregister SW and purge Cache Storage
     showToast('جاري تحديث التطبيق وتنزيل أحدث نسخة...');
-    
+
     if ('caches' in window) {
       try {
         const cacheNames = await caches.keys();
@@ -98,7 +103,7 @@ window.installApp = async function () {
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       } catch (err) { }
     }
-    
+
     if ('serviceWorker' in navigator) {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
@@ -321,7 +326,7 @@ async function loadSurah(id) {
     try {
       let data;
       const surahApiUrl = 'https://api.alquran.cloud/v1/surah/' + id;
-      
+
       let cachedSurah = localStorage.getItem('tasmi3_api_surah_' + id);
       if (cachedSurah) {
         data = JSON.parse(cachedSurah);
@@ -329,14 +334,19 @@ async function loadSurah(id) {
         const res = await fetch(surahApiUrl);
         if (!res.ok) throw new Error('Network Error');
         data = await res.json();
-        try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch(e){}
+        try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch (e) { }
       }
 
       let ayahsList = [];
       data.data.ayahs.forEach((a, i) => {
         let text = a.text;
-        if (id != 1 && id != 9 && i === 0 && text.startsWith('بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ')) {
-          text = text.replace(/^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ\s*/, '');
+        // Strip Bismillah from first ayah (robust - strips diacritics to detect)
+        if (id != 1 && id != 9 && i === 0) {
+          const bare = text.replace(/[\u064B-\u065F\u06D6-\u06ED\u0670\u0640\u06E1]/g, '');
+          if (bare.startsWith('\u0628\u0633\u0645') || bare.startsWith('\u0628\u0650\u0633')) {
+            const words = text.split(/\s+/);
+            text = words.slice(4).join(' ');
+          }
         }
         ayahsList.push(text);
       });
@@ -359,6 +369,13 @@ async function loadSurah(id) {
   const surah = SURAHS[id];
   if (!surah) return;
 
+  // If mushaf mode is active, delegate to mushaf renderer instead
+  if (isMushafMode) {
+    localStorage.setItem('tasmi3_last_surah', id);
+    renderMushafMode(id);
+    return;
+  }
+
   // Reset state
   totalWords = 0;
   revealedCount = 0;
@@ -374,15 +391,35 @@ async function loadSurah(id) {
     btnPlayWhole.style.display = 'block';
   }
 
+  // Restore bismillah visibility for normal mode
+  const bismillahDiv = document.getElementById('bismillah');
+  if (bismillahDiv) bismillahDiv.style.display = '';
+
   const container = document.getElementById('ayahsContainer');
   container.innerHTML = '';
 
   // Compute totalWords for ALL ayahs upfront
-  totalWords = surah.ayahs.reduce((sum, ayah) => sum + ayah.split(' ').length, 0);
+  totalWords = surah.ayahs.reduce((sum, ayah) => sum + ayah.split(' ').filter(w => w.length > 0).length, 0);
 
-  // Load saved state & count all previously revealed words upfront (even for unrendered ayahs)
+  // Auto-migrate saved state to fix corrupted indices from previous empty-word bugs
   const savedState = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
-  _savedWordsForCurrentSurah = savedState[id] || [];
+  const rawSavedWords = savedState[id] || [];
+  const ayahWordCounts = {};
+  rawSavedWords.forEach(idStr => {
+    const parts = idStr.split('-');
+    if (parts.length === 2) ayahWordCounts[parts[0]] = (ayahWordCounts[parts[0]] || 0) + 1;
+  });
+
+  _savedWordsForCurrentSurah = [];
+  Object.keys(ayahWordCounts).forEach(aIdxStr => {
+    const aIdx = parseInt(aIdxStr);
+    if (aIdx >= surah.ayahs.length) return;
+    const newWordsCount = surah.ayahs[aIdx].split(' ').filter(w => w.length > 0).length;
+    const revealCount = Math.min(ayahWordCounts[aIdxStr], newWordsCount);
+    for (let wIdx = 0; wIdx < revealCount; wIdx++) {
+      _savedWordsForCurrentSurah.push(`${aIdx}-${wIdx}`);
+    }
+  });
   revealedCount = _savedWordsForCurrentSurah.length;
 
   // Render first batch of ayahs
@@ -478,23 +515,49 @@ function changeNWords(delta) {
   document.getElementById('btnRevealN').textContent = 'كشف ' + ar[val - 1] + ' كلمة';
 }
 
+function _ensureAyahsLoadedUpTo(targetIdx) {
+  const surah = SURAHS[currentSurah];
+  if (!surah || isMushafMode) return;
+  
+  if (targetIdx >= _loadedUpTo) {
+    const container = document.getElementById('ayahsContainer');
+    const nextCard = container ? container.querySelector('.next-surah-card') : null;
+    const end = Math.min(targetIdx + 5, surah.ayahs.length);
+    const frag = document.createDocumentFragment();
+    for (let idx = _loadedUpTo; idx < end; idx++) {
+      const block = createAyahBlock(idx, surah, false);
+      _restoreBlockState(block, idx);
+      frag.appendChild(block);
+    }
+    if (nextCard) container.insertBefore(frag, nextCard);
+    else if (container) container.appendChild(frag);
+    _loadedUpTo = end;
+  }
+}
+
 function getNextTargetIndex() {
+  if (revealedCount >= totalWords && totalWords > 0) return -1;
+
+  const surah = SURAHS[currentSurah];
+  if (!surah) return -1;
+
+  if (isMushafMode) {
+    const firstHidden = document.querySelector('.mushaf-page .word.hidden, .mushaf-page .word.fading, .mushaf-page .word.hinted');
+    if (firstHidden) return parseInt(firstHidden.dataset.ayah);
+    return -1;
+  }
+
+  // Normal mode: find first block with a hidden word (perfectly tracks undos)
   const blocks = document.querySelectorAll('.ayah-block');
-  let maxRevealedIdx = -1;
   for (let i = 0; i < blocks.length; i++) {
-    if (blocks[i].querySelector('.word.revealed')) {
-      maxRevealedIdx = i;
+    if (blocks[i].querySelector('.word.hidden, .word.fading, .word.hinted')) {
+      return parseInt(blocks[i].dataset.ayahIdx);
     }
   }
 
-  if (maxRevealedIdx === -1) return 0;
-
-  if (blocks[maxRevealedIdx].querySelector('.word.hidden, .word.fading')) {
-    return maxRevealedIdx;
-  }
-
-  if (maxRevealedIdx + 1 < blocks.length) {
-    return maxRevealedIdx + 1;
+  // If all currently rendered blocks are fully revealed, check if more exist
+  if (_loadedUpTo < surah.ayahs.length) {
+    return _loadedUpTo;
   }
 
   return -1;
@@ -504,18 +567,34 @@ function revealNextAyah() {
   const targetIndex = getNextTargetIndex();
   if (targetIndex === -1) return;
 
-  const blocks = document.querySelectorAll('.ayah-block');
-  const block = blocks[targetIndex];
-  block.querySelectorAll('.word').forEach(span => {
-    if (span.classList.contains('hidden') || span.classList.contains('fading') || span.classList.contains('hinted')) {
-      span.classList.remove('hidden', 'fading', 'hinted');
-      span.classList.add('revealed');
-      revealedCount++;
-    }
-  });
+  _ensureAyahsLoadedUpTo(targetIndex);
 
-  // Scroll to revealed ayah smoothly
-  block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (isMushafMode) {
+    const paragraph = document.querySelector('.mushaf-text');
+    if (paragraph) {
+      paragraph.querySelectorAll(`.word[data-ayah="${targetIndex}"]`).forEach(span => {
+        if (span.classList.contains('hidden') || span.classList.contains('fading') || span.classList.contains('hinted')) {
+          span.classList.remove('hidden', 'fading', 'hinted');
+          span.classList.add('revealed');
+          revealedCount++;
+        }
+      });
+      const firstWord = paragraph.querySelector(`.word[data-ayah="${targetIndex}"]`);
+      if (firstWord) firstWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } else {
+    const block = document.querySelector(`.ayah-block[data-ayah-idx="${targetIndex}"]`);
+    if (block) {
+      block.querySelectorAll('.word').forEach(span => {
+        if (span.classList.contains('hidden') || span.classList.contains('fading') || span.classList.contains('hinted')) {
+          span.classList.remove('hidden', 'fading', 'hinted');
+          span.classList.add('revealed');
+          revealedCount++;
+        }
+      });
+      block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
 
   updateStats();
 }
@@ -525,17 +604,26 @@ function revealNWords() {
   let count = 0;
   let lastWord = null;
 
-  const blocks = document.querySelectorAll('.ayah-block');
+  const surah = SURAHS[currentSurah];
+  if (!surah) return;
+
   let startIdx = getNextTargetIndex();
+  if (startIdx === -1) startIdx = 0;
 
-  if (startIdx === -1) {
-    startIdx = 0; // If everything is revealed or nothing is, start from 0
-  }
+  for (let i = startIdx; i < surah.ayahs.length && count < n; i++) {
+    _ensureAyahsLoadedUpTo(i);
+    
+    let container;
+    if (isMushafMode) container = document.querySelector('.mushaf-text');
+    else container = document.querySelector(`.ayah-block[data-ayah-idx="${i}"]`);
+    
+    if (!container) continue;
 
-  // Go through ayahs starting from the current target ayah
-  for (let i = startIdx; i < blocks.length && count < n; i++) {
-    const block = blocks[i];
-    const hiddenWords = Array.from(block.querySelectorAll('.word.hidden, .word.fading, .word.hinted'));
+    const query = isMushafMode 
+      ? `.word.hidden[data-ayah="${i}"], .word.fading[data-ayah="${i}"], .word.hinted[data-ayah="${i}"]`
+      : `.word.hidden, .word.fading, .word.hinted`;
+      
+    const hiddenWords = Array.from(container.querySelectorAll(query));
     for (let j = 0; j < hiddenWords.length && count < n; j++) {
       const word = hiddenWords[j];
       word.classList.remove('hidden', 'fading', 'hinted');
@@ -619,7 +707,7 @@ function revealAll() {
   if (surahForReveal) {
     const allWordIds = [];
     surahForReveal.ayahs.forEach((ayah, idx) => {
-      ayah.split(' ').forEach((_, wi) => allWordIds.push(`${idx}-${wi}`));
+      ayah.split(' ').filter(w => w.length > 0).forEach((_, wi) => allWordIds.push(`${idx}-${wi}`));
     });
     _savedWordsForCurrentSurah = allWordIds;
     const savedAll = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
@@ -716,7 +804,7 @@ function createAyahBlock(idx, surah, animate) {
   const textDiv = document.createElement('div');
   textDiv.className = 'ayah-text';
 
-  const words = ayah.split(' ');
+  const words = ayah.split(' ').filter(w => w.length > 0);
   words.forEach((word, wi) => {
     const span = document.createElement('span');
     span.className = 'word hidden';
@@ -809,11 +897,16 @@ let _activeAyahBtn = null;
 
 function setTheme(mode) {
   const body = document.body;
+  const html = document.documentElement;
   const btnDark = document.getElementById('btnThemeDark');
   const btnLight = document.getElementById('btnThemeLight');
 
+  // Clean up early classes
+  html.classList.remove('theme-light-early', 'theme-dark-early');
+
   if (mode === 'light') {
     body.classList.add('theme-light');
+    html.style.colorScheme = 'light';
     if (btnLight) {
       btnLight.style.background = 'var(--gold-dim)';
       btnLight.style.color = 'var(--gold)';
@@ -823,6 +916,7 @@ function setTheme(mode) {
     localStorage.setItem('tasmi3_theme', 'light');
   } else {
     body.classList.remove('theme-light');
+    html.style.colorScheme = 'dark';
     if (btnDark) {
       btnDark.style.background = 'var(--gold-dim)';
       btnDark.style.color = 'var(--gold)';
@@ -834,39 +928,307 @@ function setTheme(mode) {
 }
 
 let isMushafMode = false;
-function toggleMushafMode() {
-  isMushafMode = !isMushafMode;
-  const container = document.getElementById('ayahsContainer');
-  const btn = document.getElementById('btnMushaf');
+let _activeMushafPopup = null; // track open popup to close on outside click
 
-  // Find the ayah block closest to the center of the viewport BEFORE layout changes
-  const blocks = container.querySelectorAll('.ayah-block');
-  let anchorBlock = null;
-  const viewportCenter = window.innerHeight / 2;
-  let bestDist = Infinity;
-  blocks.forEach(b => {
-    const rect = b.getBoundingClientRect();
-    const blockCenter = rect.top + rect.height / 2;
-    const dist = Math.abs(blockCenter - viewportCenter);
-    if (dist < bestDist) { bestDist = dist; anchorBlock = b; }
-  });
+function _getScrollAyahIndex() {
+  // Works in BOTH normal mode and mushaf mode
+  const viewCenter = window.innerHeight / 2;
+  let bestIdx = 0, bestDist = Infinity;
 
   if (isMushafMode) {
-    container.classList.add('mushaf-mode');
-    btn.style.background = 'rgba(212,168,83,0.15)';
-    btn.style.borderColor = 'var(--gold)';
+    // Mushaf mode: words have data-ayah attribute
+    const seen = new Set();
+    document.querySelectorAll('.word[data-ayah]').forEach(w => {
+      const aIdx = parseInt(w.dataset.ayah);
+      if (seen.has(aIdx)) return;
+      seen.add(aIdx);
+      const rect = w.getBoundingClientRect();
+      const dist = Math.abs(rect.top - viewCenter);
+      if (dist < bestDist) { bestDist = dist; bestIdx = aIdx; }
+    });
   } else {
-    container.classList.remove('mushaf-mode');
-    btn.style.background = 'transparent';
-    btn.style.borderColor = 'var(--gold-line)';
-  }
-
-  // After layout reflows, scroll back to the same ayah
-  if (anchorBlock) {
-    requestAnimationFrame(() => {
-      anchorBlock.scrollIntoView({ block: 'center' });
+    // Normal mode: ayah-blocks have data-ayah-idx attribute
+    document.querySelectorAll('.ayah-block').forEach(block => {
+      const aIdx = parseInt(block.dataset.ayahIdx);
+      if (isNaN(aIdx)) return;
+      const rect = block.getBoundingClientRect();
+      const dist = Math.abs(rect.top - viewCenter);
+      if (dist < bestDist) { bestDist = dist; bestIdx = aIdx; }
     });
   }
+  return bestIdx;
+}
+
+function _scrollToAyahIndex(ayahIdx) {
+  // Use double-rAF to ensure DOM is fully painted after render
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (isMushafMode) {
+        // Mushaf: find word with data-ayah
+        const target = document.querySelector(`.word[data-ayah="${ayahIdx}"]`);
+        if (target) target.scrollIntoView({ block: 'center' });
+      } else {
+        // Normal mode: may need to force-load more ayahs first (progressive loading)
+        _ensureAyahsLoadedUpTo(ayahIdx);
+        const block = document.querySelector(`.ayah-block[data-ayah-idx="${ayahIdx}"]`);
+        if (block) block.scrollIntoView({ block: 'center' });
+      }
+    });
+  });
+}
+
+function toggleMushafMode() {
+  // Capture scroll position BEFORE re-render
+  const scrollAyah = _getScrollAyahIndex();
+
+  isMushafMode = !isMushafMode;
+  const btn = document.getElementById('btnMushaf');
+
+  if (isMushafMode) {
+    btn.style.background = 'rgba(212,168,83,0.15)';
+    btn.style.borderColor = 'var(--gold)';
+    saveRevealedState();
+    renderMushafMode(currentSurah);
+  } else {
+    btn.style.background = 'transparent';
+    btn.style.borderColor = 'var(--gold-line)';
+    saveRevealedState();
+    isMushafMode = false; // ensure loadSurah knows
+    loadSurah(currentSurah);
+  }
+
+  // Restore scroll position to same ayah
+  _scrollToAyahIndex(scrollAyah);
+}
+
+// Close mushaf popup when clicking outside
+document.addEventListener('click', (e) => {
+  if (_activeMushafPopup && !_activeMushafPopup.contains(e.target)) {
+    _activeMushafPopup.remove();
+    _activeMushafPopup = null;
+  }
+});
+
+function _showMushafAyahPopup(marker, paragraph, idx) {
+  // Close any existing popup
+  if (_activeMushafPopup) { _activeMushafPopup.remove(); _activeMushafPopup = null; }
+
+  const popup = document.createElement('span');
+  popup.className = 'mushaf-ayah-popup';
+
+  // Reveal button
+  const revealBtn = document.createElement('button');
+  revealBtn.textContent = '👁 كشف';
+  revealBtn.title = 'كشف كل كلمات الآية';
+  revealBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    paragraph.querySelectorAll(`.word[data-ayah="${idx}"]`).forEach(span => {
+      if (span.classList.contains('hidden') || span.classList.contains('fading') || span.classList.contains('hinted')) {
+        span.classList.remove('hidden', 'fading', 'hinted');
+        span.classList.add('revealed');
+        revealedCount++;
+      }
+    });
+    updateStats();
+    popup.remove();
+    _activeMushafPopup = null;
+  });
+
+  // Undo button
+  const undoBtn = document.createElement('button');
+  undoBtn.textContent = '↺ إخفاء';
+  undoBtn.title = 'إخفاء كل كلمات الآية';
+  undoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    let hidCount = 0;
+    paragraph.querySelectorAll(`.word[data-ayah="${idx}"]`).forEach(span => {
+      if (span.classList.contains('revealed') || span.classList.contains('fading')) {
+        span.classList.remove('revealed', 'fading');
+        span.classList.add('hidden');
+        hidCount++;
+      }
+    });
+    revealedCount -= hidCount;
+    if (revealedCount < 0) revealedCount = 0;
+    updateStats();
+    popup.remove();
+    _activeMushafPopup = null;
+  });
+
+  // Play button
+  const playBtn = document.createElement('button');
+  playBtn.textContent = '🎧 سماع';
+  playBtn.title = 'استمع للآية';
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const ayahNum = idx + 1;
+    stopAyahAudio();
+    _ayahAudio = new Audio(getAyahUrl(currentSurah, ayahNum));
+    _ayahAudio.play().catch(() => { });
+    _ayahAudio.addEventListener('ended', () => { _ayahAudio = null; });
+    popup.remove();
+    _activeMushafPopup = null;
+  });
+
+  // Tafsir button
+  const tafsirBtn = document.createElement('button');
+  tafsirBtn.textContent = '📖 تفسير';
+  tafsirBtn.title = 'تفسير الآية';
+  tafsirBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openTafsirModal(currentSurah, idx + 1);
+    popup.remove();
+    _activeMushafPopup = null;
+  });
+
+  popup.appendChild(revealBtn);
+  popup.appendChild(undoBtn);
+  popup.appendChild(playBtn);
+  popup.appendChild(tafsirBtn);
+
+  // Insert popup right after the marker
+  marker.insertAdjacentElement('afterend', popup);
+  _activeMushafPopup = popup;
+}
+
+// ── Mushaf Mode Renderer ──
+function renderMushafMode(id) {
+  const surah = SURAHS[id];
+  if (!surah) return;
+
+  // Remove progressive scroll listener from normal mode
+  if (_scrollListener) { window.removeEventListener('scroll', _scrollListener); _scrollListener = null; }
+
+  // Reset counts — recompute from saved state
+  totalWords = surah.ayahs.reduce((sum, ayah) => sum + ayah.split(' ').filter(w => w.length > 0).length, 0);
+  // Auto-migrate saved state to fix corrupted indices from previous empty-word bugs
+  const savedState = JSON.parse(localStorage.getItem('tasmi3_revealed_state')) || {};
+  const rawSavedWords = savedState[id] || [];
+  const ayahWordCounts = {};
+  rawSavedWords.forEach(idStr => {
+    const parts = idStr.split('-');
+    if (parts.length === 2) ayahWordCounts[parts[0]] = (ayahWordCounts[parts[0]] || 0) + 1;
+  });
+
+  const savedWords = [];
+  Object.keys(ayahWordCounts).forEach(aIdxStr => {
+    const aIdx = parseInt(aIdxStr);
+    if (aIdx >= surah.ayahs.length) return;
+    const newWordsCount = surah.ayahs[aIdx].split(' ').filter(w => w.length > 0).length;
+    const revealCount = Math.min(ayahWordCounts[aIdxStr], newWordsCount);
+    for (let wIdx = 0; wIdx < revealCount; wIdx++) {
+      savedWords.push(`${aIdx}-${wIdx}`);
+    }
+  });
+
+  const container = document.getElementById('ayahsContainer');
+  container.innerHTML = '';
+
+  // Bismillah handling
+  const bismillahDiv = document.getElementById('bismillah');
+  if (parseInt(id) === 1) {
+    if (bismillahDiv) bismillahDiv.style.display = 'none';
+  } else {
+    if (bismillahDiv) bismillahDiv.style.display = '';
+  }
+
+  // Create the mushaf page wrapper
+  const mushafPage = document.createElement('div');
+  mushafPage.className = 'mushaf-page';
+
+  // Single continuous paragraph
+  const paragraph = document.createElement('p');
+  paragraph.className = 'mushaf-text';
+
+  revealedCount = 0;
+
+  surah.ayahs.forEach((ayah, idx) => {
+    const words = ayah.split(' ').filter(w => w.length > 0);
+    words.forEach((word, wi) => {
+      const span = document.createElement('span');
+      span.className = 'word hidden';
+      span.dataset.id = `${idx}-${wi}`;
+      span.dataset.ayah = String(idx);
+
+      const inner = document.createElement('span');
+      inner.className = 'word-text';
+      inner.textContent = word;
+      span.appendChild(inner);
+
+      // Restore state
+      if (savedWords.includes(`${idx}-${wi}`)) {
+        span.classList.remove('hidden');
+        span.classList.add('revealed');
+        revealedCount++;
+      }
+
+      span.addEventListener('click', () => revealWord(span));
+      paragraph.appendChild(span);
+
+      if (wi < words.length - 1) {
+        paragraph.appendChild(document.createTextNode(' '));
+      }
+    });
+
+    // Ayah number marker — ۝ with number
+    const marker = document.createElement('span');
+    marker.className = 'ayah-marker';
+    marker.textContent = '\u06DD' + toArabicNum(idx);
+    marker.dataset.ayah = String(idx);
+    marker.title = 'خيارات الآية';
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _showMushafAyahPopup(marker, paragraph, idx);
+    });
+    paragraph.appendChild(marker);
+
+    // Sajda marker
+    if (surah.sajda !== undefined && surah.sajda === idx) {
+      const sajdaMark = document.createElement('span');
+      sajdaMark.className = 'sajda-mark';
+      sajdaMark.textContent = ' ۩';
+      sajdaMark.title = 'آية سجدة التلاوة';
+      paragraph.appendChild(sajdaMark);
+    }
+
+    // Space after marker
+    paragraph.appendChild(document.createTextNode(' '));
+  });
+
+  mushafPage.appendChild(paragraph);
+  container.appendChild(mushafPage);
+
+  // Next surah card
+  const nextId = parseInt(id) < 114 ? parseInt(id) + 1 : null;
+  if (nextId) {
+    let nextName;
+    if (SURAHS[nextId] && SURAHS[nextId].name) {
+      nextName = SURAHS[nextId].name;
+    } else {
+      const nativeSelect = document.getElementById('surahSelect');
+      const opt = nativeSelect ? nativeSelect.querySelector(`option[value="${nextId}"]`) : null;
+      nextName = opt ? opt.text : ('سورة ' + nextId);
+    }
+    const card = document.createElement('div');
+    card.className = 'next-surah-card';
+    card.innerHTML = `
+      <div class="next-surah-label">السورة التالية</div>
+      <div class="next-surah-name">${nextName}</div>
+      <button class="btn-next-surah" onclick="goNextSurah(${nextId})">
+        <span>انتقل إلى ${nextName}</span>
+        <span class="arrow">←</span>
+      </button>
+    `;
+    container.appendChild(card);
+  }
+
+  // Hide the "play whole surah" button in mushaf mode
+  const btnPlayWhole = document.getElementById('btnPlayWholeSurah');
+  if (btnPlayWhole) btnPlayWhole.style.display = 'none';
+
+  localStorage.setItem('tasmi3_last_surah', id);
+  updateStats();
+  updateStatusButtons();
 }
 
 let _isPlayingWholeSurah = false;
@@ -1096,11 +1458,11 @@ let currentTafsirContext = { surah: null, ayah: null };
 function openTafsirModal(surah, ayah) {
   currentTafsirContext = { surah, ayah };
   document.getElementById('tafsirAyahNum').textContent = toArabicNum(ayah - 1); // ayahNum starts from 1, toArabicNum adds 1, passing ayah-1 yields correct arabic num
-  
+
   const modal = document.getElementById('tafsirModal');
   modal.classList.add('show');
   document.body.style.overflow = 'hidden'; // stop background scrolling
-  
+
   // Reset tabs to default (Al-Muyassar -> id: 16)
   const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
   tabs.forEach(t => t.classList.remove('active'));
@@ -1124,9 +1486,9 @@ function switchTafsirTab(tafsirId, btn) {
   const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
   tabs.forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  
+
   const { surah, ayah } = currentTafsirContext;
-  if(surah && ayah) {
+  if (surah && ayah) {
     loadTafsirContent(tafsirId, surah, ayah);
   }
 }
@@ -1134,9 +1496,9 @@ function switchTafsirTab(tafsirId, btn) {
 async function loadTafsirContent(tafsirId, surah, ayah) {
   const container = document.getElementById('tafsirContent');
   container.innerHTML = '<div class="custom-spinner"></div>';
-  
+
   try {
-    const cacheUrl = `https://api.quran.com/api/v4/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
+    const apiUrl = `https://api.quran.com/api/v4/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
     let data;
 
     const cacheKey = `tasmi3_tafsir_${tafsirId}_${surah}_${ayah}`;
@@ -1145,17 +1507,17 @@ async function loadTafsirContent(tafsirId, surah, ayah) {
     if (cachedTafsir) {
       data = JSON.parse(cachedTafsir);
     } else {
-      const res = await fetch(cacheUrl);
+      const res = await fetch(apiUrl);
       if (!res.ok) throw new Error('API Error');
       data = await res.json();
-      try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e){}
+      try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (e) { }
     }
-    
+
     let textResult = data && data.tafsir && data.tafsir.text ? data.tafsir.text : 'لا يوجد تفسير متاح لهذه الآية حالياً.';
 
     container.innerHTML = `<div class="tafsir-content-wrap">${textResult}</div>`;
     container.scrollTop = 0;
-    
+
   } catch (err) {
     container.innerHTML = '<div style="text-align:center; color:#ff8888; font-family: Cairo; margin-top:20px;">حدث خطأ أثناء جلب التفسير. يرجى المحاولة لاحقاً أو التأكد من توفر الإنترنت.</div>';
   }

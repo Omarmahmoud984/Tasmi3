@@ -2,9 +2,12 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* Prevent browser forced dark mode from altering elements */
+  forced-color-adjust: none;
 }
 
-:root {
+:root, html.theme-dark-early {
+  color-scheme: dark;
   --bg: #080b0e;
   --bg2: #0d1117;
   --bg3: #111820;
@@ -31,7 +34,8 @@
   --custom-search-bg: rgba(0, 0, 0, 0.3);
 }
 
-body.theme-light {
+body.theme-light, html.theme-light-early body {
+  color-scheme: light;
   --bg: #f9f6f0;
   --bg2: #ffffff;
   --surface: rgba(0, 0, 0, 0.03);
@@ -460,24 +464,16 @@ header.collapsed .btn-header-toggle {
   visibility: hidden;
 }
 
-.word.hidden::after {
-  content: '';
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  top: 15%;
-  bottom: 15%;
-  background: var(--surface);
-  border: 1px solid var(--gold-line);
-  border-radius: 8px;
-  pointer-events: none;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
+/* Use border-bottom instead of ::after absolute box — avoids phantom lines on wrapped inline elements */
+.word.hidden {
+  border-bottom: 2px solid var(--gold-line);
+  border-radius: 0;
+  min-width: 1.2em; /* prevent zero-width empty blocks */
 }
 
-.word.hidden:hover::after {
+.word.hidden:hover {
+  border-bottom-color: var(--gold);
   background: var(--gold-dim);
-  border-color: var(--gold);
 }
 
 .word.revealed .word-text {
@@ -485,8 +481,8 @@ header.collapsed .btn-header-toggle {
   animation: wordReveal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.word.revealed::after {
-  display: none;
+.word.revealed {
+  border-bottom: none;
 }
 
 .word.hinted .word-text {
@@ -495,8 +491,8 @@ header.collapsed .btn-header-toggle {
   color: var(--gold);
 }
 
-.word.hinted::after {
-  display: none;
+.word.hinted {
+  border-bottom: none;
 }
 
 .word.fading .word-text {
@@ -1487,50 +1483,129 @@ header.collapsed .btn-header-toggle {
 }
 
 /* ═══ MUSHAF MODE ═══ */
-#ayahsContainer.mushaf-mode {
+.mushaf-page {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--gold-dim);
+  border-radius: var(--radius);
+  padding: 28px 22px;
+  opacity: 0;
+  animation: fadeIn 0.6s ease 0.1s forwards;
+  box-shadow: inset 0 0 40px rgba(212, 168, 83, 0.04), 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+
+
+.mushaf-text {
+  font-family: 'Scheherazade New', serif;
+  font-size: 2rem;
+  line-height: 4rem;
   text-align: justify;
-  line-height: clamp(3rem, 7vw, 4rem);
-  padding: 10px 5px;
-}
-
-.mushaf-mode .ayah-block {
-  display: inline;
-  padding: 0;
+  direction: rtl;
+  color: var(--text);
+  font-feature-settings: "calt" 1, "liga" 1, "kern" 1;
   margin: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  animation: none;
-  opacity: 1;
-  transform: none;
+  word-spacing: 3px;
+  position: relative;
+  z-index: 1;
 }
 
-.mushaf-mode .ayah-text {
+/* Words inside mushaf — inline with subtle spacing */
+.mushaf-page .word {
   display: inline;
-  line-height: inherit;
+  margin: 0 1px;
+  padding: 1px 3px;
+  border-radius: 4px;
 }
 
-.mushaf-mode .ayah-number {
-  display: none;
+/* Hidden words in mushaf — inherit the border-bottom style, tweak spacing */
+.mushaf-page .word.hidden {
+  border-bottom-width: 1.5px;
+  min-width: 0.8em;
 }
 
-.mushaf-mode .ayah-audio-row {
-  display: inline-block;
+/* Ayah number marker ۝ */
+.ayah-marker {
+  display: inline;
+  font-family: 'Scheherazade New', serif;
+  font-size: 1.15em;
+  color: var(--gold);
+  cursor: pointer;
+  padding: 0 5px;
+  opacity: 0.75;
+  transition: opacity 0.2s, transform 0.15s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  vertical-align: baseline;
+  position: relative;
+}
+
+.ayah-marker:hover {
+  opacity: 1;
+}
+
+.ayah-marker:active {
+  transform: scale(1.15);
+}
+
+/* Mushaf Ayah Options Popup */
+.mushaf-ayah-popup {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg2);
+  border: 1px solid var(--gold-line);
+  border-radius: 10px;
+  padding: 4px 6px;
   margin: 0 4px;
-  padding: 0;
-  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   vertical-align: middle;
+  animation: popupFadeIn 0.15s ease;
+  z-index: 50;
+  position: relative;
 }
 
-.mushaf-mode .btn-ayah-audio {
-  padding: 6px;
-  background: rgba(212, 168, 83, 0.05);
-  border-radius: 50%;
+.theme-light .mushaf-ayah-popup {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-.mushaf-mode .btn-ayah-audio>span:last-child {
-  display: none;
+.mushaf-ayah-popup button {
+  background: var(--surface);
+  border: 1px solid var(--gold-line);
+  color: var(--gold);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.mushaf-ayah-popup button:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+}
+
+.mushaf-ayah-popup button:active {
+  transform: scale(0.95);
+}
+
+@keyframes popupFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile mushaf — keep same look as desktop, only adjust padding */
+@media (max-width: 480px) {
+  .mushaf-page {
+    padding: 24px 16px;
+    border-radius: 12px;
+  }
+}
+
 
 /* ═══ TASBEEH SIDEBAR & TOAST ═══ */
 .sidebar-overlay {

@@ -4,7 +4,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Prevent browser force-dark from overriding our theme -->
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>tasmi3 — تسميع</title>
+  <!-- Apply theme class BEFORE paint to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('tasmi3_theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('theme-dark-early');
+      } else {
+        document.documentElement.classList.add('theme-light-early');
+      }
+    })();
+  </script>
   <link
     href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
     rel="stylesheet">
