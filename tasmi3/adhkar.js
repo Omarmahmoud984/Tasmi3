@@ -1,6 +1,15 @@
 let currentCategory = 'morning';
 let dhikrState = {}; // to store current counts
 
+// ── Tab Completion Tracking (session-only, no persistence) ──
+const _completedTabs = new Set(); // prevents duplicate popups
+const TAB_NAMES = {
+  morning: 'أذكار الصباح',
+  evening: 'أذكار المساء',
+  after_prayer: 'أذكار بعد الصلاة',
+  sleep: 'أذكار النوم'
+};
+
 function initAdhkar() {
   const savedTheme = localStorage.getItem('tasmi3_theme');
   if (savedTheme === 'dark') {
@@ -145,6 +154,7 @@ function decrementCount(dhikrId) {
     circle.innerHTML = '✓';
     circle.classList.add('finished');
     card.classList.add('completed');
+    checkTabCompletion(currentCategory);
   } else {
     circle.innerHTML = newCount;
   }
@@ -196,6 +206,7 @@ function checkParentCompletion(parentId) {
   if (!anyLeft) {
     const card = document.getElementById(`card-${parentId}`);
     card.classList.add('completed');
+    checkTabCompletion(currentCategory);
   }
 }
 
@@ -220,6 +231,79 @@ function closeDhikrModal(e) {
     modal.classList.remove('show');
     document.body.style.overflow = '';
   }
+}
+
+// ── Tab Completion Detection ──
+function checkTabCompletion(category) {
+  if (_completedTabs.has(category)) return; // already shown popup
+
+  const list = ADHIKAR_DB[category];
+  if (!list) return;
+
+  let allDone = true;
+  for (const item of list) {
+    if (item.subDhikrs) {
+      for (const sub of item.subDhikrs) {
+        if (dhikrState[category][sub.id] > 0) { allDone = false; break; }
+      }
+    } else {
+      if (dhikrState[category][item.id] > 0) { allDone = false; }
+    }
+    if (!allDone) break;
+  }
+
+  if (allDone) {
+    _completedTabs.add(category);
+    markTabCompleted(category);
+    showCompletionPopup(TAB_NAMES[category] || category);
+  }
+}
+
+// ── Mark Tab Green ──
+function markTabCompleted(category) {
+  const tabKeys = ['morning', 'evening', 'after_prayer', 'sleep'];
+  const idx = tabKeys.indexOf(category);
+  if (idx === -1) return;
+
+  const tabBtns = document.querySelectorAll('.tabs-header .tab-btn');
+  if (tabBtns[idx]) {
+    tabBtns[idx].classList.add('tab-completed');
+  }
+}
+
+// ── Completion Popup ──
+function showCompletionPopup(tabName) {
+  // Remove any existing popup
+  const existing = document.getElementById('adhkarCompletionPopup');
+  if (existing) existing.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'adhkarCompletionPopup';
+  popup.className = 'adhkar-completion-popup';
+  popup.innerHTML = `
+    <button class="adhkar-popup-close" onclick="closeCompletionPopup()">✕</button>
+    <div class="adhkar-popup-icon">🎉</div>
+    <div class="adhkar-popup-msg">بارك الله فيك، أتممت ${tabName}</div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // Trigger animation on next frame
+  requestAnimationFrame(() => {
+    popup.classList.add('show');
+  });
+
+  // Auto-dismiss after 4 seconds
+  popup._timer = setTimeout(() => closeCompletionPopup(), 4000);
+}
+
+function closeCompletionPopup() {
+  const popup = document.getElementById('adhkarCompletionPopup');
+  if (!popup) return;
+  clearTimeout(popup._timer);
+  popup.classList.remove('show');
+  popup.classList.add('hiding');
+  setTimeout(() => popup.remove(), 400);
 }
 
 // Start
