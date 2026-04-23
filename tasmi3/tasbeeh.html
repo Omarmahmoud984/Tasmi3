@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>تسبيح</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #080b0e;
+      --bg2: #0d1117;
+      --surface: rgba(255, 255, 255, 0.04);
+      --gold: #d4a853;
+      --gold-dim: rgba(212, 168, 83, 0.18);
+      --gold-line: rgba(212, 168, 83, 0.22);
+      --text: #e8e0d0;
+      --text2: #a09880;
+      --text3: #5a5448;
+      --count-color: #e8e0d0;
+      --count-color-cd: #7ab8ff;
+      --radius: 14px;
+    }
+
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      touch-action: manipulation;
+    }
+
+    /* ── Tap ripple overlay ── */
+    #tapArea {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* ── Back button ── */
+    #btnBack {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 10;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #btnBack:hover {
+      background: rgba(212, 168, 83, 0.28);
+    }
+
+    /* ── Main layout ── */
+    #mainLayout {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      pointer-events: none;
+      /* let taps pass through to tapArea */
+    }
+
+    /* ── Mode label ── */
+    #modeLabel {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      color: var(--text3);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      transition: color 0.4s;
+      height: 18px;
+    }
+
+    /* ── Counter number ── */
+    #counter {
+      font-family: 'Cairo', sans-serif;
+      font-size: clamp(6rem, 28vw, 14rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--count-color);
+      transition: color 0.4s;
+      will-change: transform;
+    }
+
+    #counter.bump {
+      animation: bump 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes bump {
+      0% {
+        transform: scale(1);
+      }
+
+      40% {
+        transform: scale(1.08);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    #counter.countdown-mode {
+      color: var(--count-color-cd);
+    }
+
+    #counter.done-flash {
+      animation: doneFlash 0.4s ease;
+    }
+
+    @keyframes doneFlash {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      40% {
+        transform: scale(1.15);
+        opacity: 0.4;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* ── Progress arc (countdown only) ── */
+    #progressRing {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    #progressRing.visible {
+      opacity: 0.25;
+    }
+
+    /* ── Bottom controls ── */
+    #controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px max(20px, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(8, 11, 14, 0.98) 70%, transparent);
+    }
+
+    /* Countdown input row */
+    #cdRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #cdInput {
+      background: var(--surface);
+      border: 1px solid var(--gold-line);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 10px;
+      width: 100px;
+      text-align: center;
+      outline: none;
+      direction: ltr;
+      transition: border-color 0.2s;
+    }
+
+    #cdInput:focus {
+      border-color: var(--gold);
+    }
+
+    #cdInput::placeholder {
+      color: var(--text3);
+      font-size: 0.85rem;
+    }
+
+    /* Hide number input arrows */
+    #cdInput::-webkit-outer-spin-button,
+    #cdInput::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    #cdInput[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    #btnStart {
+      background: linear-gradient(135deg, #1a3a5c, #0e2240);
+      border: 1px solid rgba(74, 144, 217, 0.35);
+      color: #7ab8ff;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 9px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: filter 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    #btnStart:hover {
+      filter: brightness(1.15);
+    }
+
+    #btnStart:active {
+      transform: scale(0.96);
+    }
+
+    /* Reset button */
+    #btnReset {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: var(--text2);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 28px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #btnReset:hover {
+      border-color: rgba(255, 80, 80, 0.3);
+      color: #ff8888;
+    }
+
+    #btnReset:active {
+      transform: scale(0.96);
+    }
+
+    /* ── Hint text ── */
+    #tapHint {
+      position: fixed;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + clamp(5rem, 15vw, 9rem)));
+      font-size: 0.75rem;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+
+    /* ── Completion popup ── */
+    #completionPopup {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #completionPopup.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #completionCard {
+      background: var(--bg2);
+      border: 1px solid var(--gold-line);
+      border-radius: 20px;
+      padding: 36px 32px 28px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      transform: scale(0.9);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #completionPopup.show #completionCard {
+      transform: scale(1);
+    }
+
+    #completionTitle {
+      font-family: 'Scheherazade New', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      font-weight: 700;
+      line-height: 1.7;
+      margin-bottom: 6px;
+    }
+
+    #completionSub {
+      font-size: 0.95rem;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    /* ripple */
+    .ripple {
+      position: fixed;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      background: rgba(212, 168, 83, 0.15);
+      transform: scale(0);
+      pointer-events: none;
+      z-index: 0;
+      animation: rippleOut 0.5s ease-out forwards;
+    }
+
+    @keyframes rippleOut {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Back button -->
+  <button id="btnBack" onclick="window.location.href='index.html'">← رجوع</button>
+
+  <!-- Full-screen tap area -->
+  <div id="tapArea"></div>
+
+  <!-- Main display -->
+  <div id="mainLayout">
+    <div id="modeLabel">عداد</div>
+    <div id="counter">0</div>
+  </div>
+
+  <div id="tapHint">اضغط في أي مكان</div>
+
+  <!-- Bottom controls (pointer-events restored so they work) -->
+  <div id="controls">
+    <div id="cdRow">
+      <input type="number" id="cdInput" placeholder="عدد الأذكار" min="1" max="9999">
+      <button id="btnStart" onclick="startCountdown()">ابدأ العد التنازلي</button>
+    </div>
+    <button id="btnReset" onclick="resetCounter()">↺ إعادة ضبط</button>
+  </div>
+
+  <!-- Completion popup -->
+  <div id="completionPopup" onclick="closeCompletion()">
+    <div id="completionCard" onclick="event.stopPropagation()">
+      <div id="completionTitle">بارك الله فيك ✓</div>
+      <div id="completionSub">انتهيت من الذكر</div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──
+    let count = 0;
+    let mode = 'increment'; // 'increment' | 'countdown'
+    let targetCount = 0;
+    let completionTimer = null;
+
+    const counterEl = document.getElementById('counter');
+    const modeLabel = document.getElementById('modeLabel');
+    const tapArea = document.getElementById('tapArea');
+    const tapHint = document.getElementById('tapHint');
+    const cdInput = document.getElementById('cdInput');
+    const popup = document.getElementById('completionPopup');
+
+    // ── Render ──
+    function render() {
+      counterEl.textContent = String(count);
+
+      if (mode === 'countdown') {
+        counterEl.classList.add('countdown-mode');
+        modeLabel.textContent = 'عد تنازلي';
+        modeLabel.style.color = '#7ab8ff';
+      } else {
+        counterEl.classList.remove('countdown-mode');
+        modeLabel.textContent = 'عداد';
+        modeLabel.style.color = '';
+      }
+    }
+
+    function toArabic(n) {
+      return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+    }
+
+    // ── Tap handler ──
+    function onTap(e) {
+      // Ripple
+      spawnRipple(e.clientX ?? window.innerWidth / 2, e.clientY ?? window.innerHeight / 2);
+
+      // Vibrate
+      if (navigator.vibrate) navigator.vibrate(8);
+
+      if (mode === 'increment') {
+        if (count >= 9999) return;
+        count++;
+      } else {
+        if (count <= 0) return;
+        count--;
+        if (count === 0) {
+          triggerCompletion();
+          return;
+        }
+      }
+
+      bumpCounter();
+      render();
+    }
+
+    // ── Bump animation ──
+    function bumpCounter() {
+      counterEl.classList.remove('bump');
+      void counterEl.offsetWidth; // reflow
+      counterEl.classList.add('bump');
+    }
+
+    // ── Ripple ──
+    function spawnRipple(x, y) {
+      const r = document.createElement('div');
+      r.className = 'ripple';
+      r.style.left = (x - 40) + 'px';
+      r.style.top = (y - 40) + 'px';
+      document.body.appendChild(r);
+      setTimeout(() => r.remove(), 500);
+    }
+
+    // ── Start countdown ──
+    function startCountdown() {
+      let val = parseInt(cdInput.value);
+      if (!val || val < 1) {
+        cdInput.focus();
+        cdInput.style.borderColor = '#ff6666';
+        setTimeout(() => cdInput.style.borderColor = '', 800);
+        return;
+      }
+      if (val > 9999) {
+        val = 9999;
+        cdInput.value = 9999;
+      }
+      targetCount = val;
+      count = val;
+      mode = 'countdown';
+      cdInput.blur();
+      bumpCounter();
+      render();
+      // Hide hint after first use
+      tapHint.style.opacity = '0';
+    }
+
+    // ── Reset ──
+    function resetCounter() {
+      if (completionTimer) { clearTimeout(completionTimer); completionTimer = null; }
+      closeCompletion();
+      count = 0;
+      mode = 'increment';
+      cdInput.value = '';
+      tapHint.style.opacity = '1';
+      bumpCounter();
+      render();
+    }
+
+    // ── Completion ──
+    function triggerCompletion() {
+      counterEl.classList.add('done-flash');
+      setTimeout(() => counterEl.classList.remove('done-flash'), 400);
+
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+
+      popup.classList.add('show');
+
+      completionTimer = setTimeout(() => {
+        closeCompletion();
+      }, 3000);
+    }
+
+    function closeCompletion() {
+      popup.classList.remove('show');
+      if (completionTimer) { clearTimeout(completionTimer); completionTimer = null; }
+      // Auto-reset to increment mode
+      count = 0;
+      mode = 'increment';
+      cdInput.value = '';
+      tapHint.style.opacity = '1';
+      render();
+    }
+
+    // ── Events ──
+
+    // Tap area click (mouse)
+    tapArea.addEventListener('click', onTap);
+
+    // Touch — use touchend for tap feel; prevent double-fire with click
+    let _touchFired = false;
+    tapArea.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      _touchFired = true;
+      const t = e.changedTouches[0];
+      onTap({ clientX: t.clientX, clientY: t.clientY });
+      setTimeout(() => _touchFired = false, 300);
+    });
+
+    // Controls must not pass through to tapArea — already handled since they are above z-index 1
+    // but let's also stop propagation on their container
+    document.getElementById('controls').addEventListener('click', e => e.stopPropagation());
+
+    // Hide hint after first tap
+    tapArea.addEventListener('click', () => {
+      tapHint.style.opacity = '0';
+    }, { once: true });
+
+    // Enter key on input
+    cdInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') startCountdown();
+    });
+
+    // Clamp input value to max 9999 while typing
+    cdInput.addEventListener('input', () => {
+      if (parseInt(cdInput.value) > 9999) cdInput.value = 9999;
+      if (parseInt(cdInput.value) < 0) cdInput.value = '';
+    });
+
+    // ── Init ──
+    render();
+
+    // Auto-hide hint after 4 seconds
+    setTimeout(() => { tapHint.style.opacity = '0'; }, 4000);
+  </script>
+</body>
+
+</html>
