@@ -6,7 +6,8 @@
   forced-color-adjust: none;
 }
 
-:root, html.theme-dark-early {
+:root,
+html.theme-dark-early {
   color-scheme: dark;
   --bg: #080b0e;
   --bg2: #0d1117;
@@ -34,7 +35,8 @@
   --custom-search-bg: rgba(0, 0, 0, 0.3);
 }
 
-body.theme-light, html.theme-light-early body {
+body.theme-light,
+html.theme-light-early body {
   color-scheme: light;
   --bg: #f9f6f0;
   --bg2: #ffffff;
@@ -72,13 +74,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--bg);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--gold-line);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold);
 }
@@ -469,7 +474,8 @@ header.collapsed .btn-header-toggle {
 .word.hidden {
   border-bottom: 2px solid var(--gold-line);
   border-radius: 0;
-  min-width: 1.2em; /* prevent zero-width empty blocks */
+  min-width: 1.2em;
+  /* prevent zero-width empty blocks */
 }
 
 .word.hidden:hover {
@@ -1614,13 +1620,25 @@ header.collapsed .btn-header-toggle {
 }
 
 @keyframes popupFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes popupScaleUp {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Tablet mushaf */
@@ -1641,7 +1659,7 @@ header.collapsed .btn-header-toggle {
     padding: 20px 12px;
     border-radius: 12px;
   }
-  
+
   .mushaf-text {
     font-size: 1.5rem;
     line-height: 3rem;
@@ -1678,8 +1696,13 @@ header.collapsed .btn-header-toggle {
 }
 
 @keyframes sheetSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 
@@ -2273,10 +2296,12 @@ header.collapsed .btn-header-toggle {
   vertical-align: middle;
   -webkit-tap-highlight-color: transparent;
 }
+
 .tafsir-icon:hover {
   opacity: 1;
   transform: scale(1.15);
 }
+
 .tafsir-icon:active {
   transform: scale(0.95);
 }
@@ -2284,7 +2309,10 @@ header.collapsed .btn-header-toggle {
 /* Modal Overlay */
 .custom-modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--overlay-bg);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
@@ -2297,6 +2325,7 @@ header.collapsed .btn-header-toggle {
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
+
 .custom-modal-overlay.show {
   opacity: 1;
   visibility: visible;
@@ -2317,6 +2346,7 @@ header.collapsed .btn-header-toggle {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
+
 .custom-modal-overlay.show .custom-modal {
   transform: scale(1) translateY(0);
 }
@@ -2331,12 +2361,14 @@ header.collapsed .btn-header-toggle {
   border-bottom: 1px solid var(--gold-line);
   background: var(--surface);
 }
+
 .custom-modal-title {
   color: var(--gold);
   font-weight: 700;
   font-size: 1.2rem;
   margin: 0;
 }
+
 .custom-modal-close {
   background: transparent;
   border: none;
@@ -2346,6 +2378,7 @@ header.collapsed .btn-header-toggle {
   transition: all 0.2s;
   padding: 0 5px;
 }
+
 .custom-modal-close:hover {
   color: #ff5555;
   transform: scale(1.1);
@@ -2357,6 +2390,7 @@ header.collapsed .btn-header-toggle {
   background: var(--surface);
   border-bottom: 1px solid var(--gold-line);
 }
+
 .tab-btn {
   flex: 1;
   min-height: 55px;
@@ -2380,10 +2414,12 @@ header.collapsed .btn-header-toggle {
     min-height: 45px;
   }
 }
+
 .tab-btn:hover {
   color: var(--gold);
   background: rgba(212, 168, 83, 0.05);
 }
+
 .tab-btn.active {
   color: var(--gold);
   border-bottom-color: var(--gold);
@@ -2396,94 +2432,16 @@ header.collapsed .btn-header-toggle {
   border-bottom-color: var(--green2);
   background: rgba(42, 107, 79, 0.08);
 }
+
 .tab-btn.tab-completed::after {
   content: ' ✓';
   font-size: 0.75em;
   opacity: 0.8;
 }
 
-/* ═══ ADHKAR COMPLETION POPUP ═══ */
-.adhkar-completion-popup {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%) scale(0.85);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 99999;
-
-  background: var(--surface);
-  border: 1px solid var(--green2);
-  border-radius: 20px;
-  padding: 20px 28px 18px;
-  min-width: 260px;
-  max-width: 90vw;
-  text-align: center;
-  direction: rtl;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(42, 107, 79, 0.2);
-
-  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.adhkar-completion-popup.show {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
-  pointer-events: auto;
-}
-
-.adhkar-completion-popup.hiding {
-  opacity: 0;
-  transform: translateX(-50%) scale(0.88);
-  pointer-events: none;
-}
-
-.adhkar-popup-close {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  background: transparent;
-  border: none;
-  color: var(--text3);
-  font-size: 1rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.adhkar-popup-close:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.adhkar-popup-icon {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-  line-height: 1;
-}
-
-.adhkar-popup-msg {
-  font-family: 'Scheherazade New', serif;
-  font-size: 1.35rem;
-  line-height: 1.7;
-  color: var(--green2);
-  font-weight: 700;
-}
-
-.theme-light .adhkar-completion-popup {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(42, 107, 79, 0.15);
-}
-
-@media (max-width: 480px) {
-  .adhkar-completion-popup {
-    bottom: 120px;
-    padding: 16px 20px 14px;
-    border-radius: 16px;
-  }
-  .adhkar-popup-msg {
-    font-size: 1.15rem;
-  }
+/* ═══ ADHKAR COMPLETION POPUP (reuses .custom-modal-overlay + .custom-modal) ═══ */
+.adhkar-completion-modal {
+  max-width: 320px;
 }
 
 /* Modal Body */
@@ -2513,7 +2471,9 @@ header.collapsed .btn-header-toggle {
   animation: spin 1s linear infinite;
   margin: 30px auto;
 }
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-

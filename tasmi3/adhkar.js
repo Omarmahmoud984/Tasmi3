@@ -271,39 +271,50 @@ function markTabCompleted(category) {
   }
 }
 
-// ── Completion Popup ──
+// ── Completion Popup (uses same overlay+card pattern as ? info modal) ──
 function showCompletionPopup(tabName) {
   // Remove any existing popup
   const existing = document.getElementById('adhkarCompletionPopup');
   if (existing) existing.remove();
 
-  const popup = document.createElement('div');
-  popup.id = 'adhkarCompletionPopup';
-  popup.className = 'adhkar-completion-popup';
-  popup.innerHTML = `
-    <button class="adhkar-popup-close" onclick="closeCompletionPopup()">✕</button>
-    <div class="adhkar-popup-icon">🎉</div>
-    <div class="adhkar-popup-msg">بارك الله فيك، أتممت ${tabName}</div>
+  const overlay = document.createElement('div');
+  overlay.id = 'adhkarCompletionPopup';
+  overlay.className = 'custom-modal-overlay adhkar-completion-overlay';
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeCompletionPopup();
+  });
+
+  overlay.innerHTML = `
+    <div class="custom-modal adhkar-completion-modal" onclick="event.stopPropagation()">
+      <div class="custom-modal-header">
+        <h3 class="custom-modal-title">تم بحمد الله ✓</h3>
+        <button class="custom-modal-close" onclick="closeCompletionPopup()">×</button>
+      </div>
+      <div class="custom-modal-body" style="text-align: center; padding: 26px 18px;">
+        <div style="font-family: 'Scheherazade New', serif; font-size: 1.25rem; line-height: 1.8; color: var(--gold); font-weight: 700; margin-bottom: 8px;">بارك الله فيك</div>
+        <div style="font-size: 1rem; line-height: 1.6; color: var(--text2);">لقد أتممت <b style="color: var(--gold);">${tabName}</b> بنجاح</div>
+      </div>
+    </div>
   `;
 
-  document.body.appendChild(popup);
+  document.body.appendChild(overlay);
 
   // Trigger animation on next frame
   requestAnimationFrame(() => {
-    popup.classList.add('show');
+    overlay.classList.add('show');
   });
 
-  // Auto-dismiss after 4 seconds
-  popup._timer = setTimeout(() => closeCompletionPopup(), 4000);
+  // Auto-dismiss after 3 seconds
+  overlay._timer = setTimeout(() => closeCompletionPopup(), 3000);
 }
 
 function closeCompletionPopup() {
-  const popup = document.getElementById('adhkarCompletionPopup');
-  if (!popup) return;
-  clearTimeout(popup._timer);
-  popup.classList.remove('show');
-  popup.classList.add('hiding');
-  setTimeout(() => popup.remove(), 400);
+  const overlay = document.getElementById('adhkarCompletionPopup');
+  if (!overlay) return;
+  clearTimeout(overlay._timer);
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+  setTimeout(() => overlay.remove(), 350);
 }
 
 // Start
