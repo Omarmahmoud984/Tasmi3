@@ -56,6 +56,12 @@
         style="display:block; text-align:right; border:1px solid var(--gold); background:var(--gold-dim); color:var(--gold); font-weight:bold; cursor:pointer; margin-top:20px; font-size:1rem; border-radius:8px;"
         onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
 
+      <!-- Offline Download Button -->
+      <button class="oq-nav-btn" onclick="oqOpenModal(); toggleNavSidebar();">
+        <span>📥 تنزيل القرآن أوفلاين</span>
+        <span id="oqDownloadBadge" class="oq-badge"></span>
+      </button>
+
       <div class="nav-toggle-row">
         <span>إشعارات الصلاة على النبي ﷺ</span>
         <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
@@ -138,6 +144,10 @@
           <span class="tut-icon">🔔</span>
           <span><b>مُذكرة الصلاة على النبي:</b> إشعارات يمكن إيقافها وتفعيلها عبر القائمة الجانبية.</span>
         </div>
+        <div class="tut-step">
+          <span class="tut-icon">📥</span>
+          <span><b>تنزيل أوفلاين:</b> من القائمة الجانبية (☰) يمكنك تنزيل القرآن كاملاً لتسميعه وقراءته بدون إنترنت في أي وقت.</span>
+        </div>
       </div>
       <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
     </div>
@@ -185,6 +195,10 @@
         <option value="Husary_128kbps">الحصري</option>
         <option value="Minshawy_Murattal_128kbps">المنشاوي</option>
         <option value="MaherAlMuaiqly128kbps">ماهر المعيقلي</option>
+        <option value="Abdurrahmaan_As-Sudais_192kbps">عبدالرحمن السديس</option>
+        <option value="Ghamadi_40kbps">سعد الغامدي</option>
+        <option value="ahmed_ibn_ali_al_ajamy_128kbps">أحمد العجمي</option>
+        <option value="Nasser_Alqatami_128kbps">ناصر القطامي</option>
         <option value="Muhammad_Ayyoub_128kbps">محمد أيوب</option>
         <option value="Ali_Jaber_64kbps">علي جابر</option>
         <option value="Alafasy_128kbps">مشاري العفاسي</option>
@@ -278,7 +292,51 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       Offline Quran Download Modal
+       ══════════════════════════════════════════ -->
+  <div class="oq-modal-overlay" id="oqModal" onclick="if(event.target===this) oqCloseModal()">
+    <div class="oq-modal-card">
+
+      <!-- Header -->
+      <div class="oq-modal-header">
+        <div class="oq-modal-title">📥 تنزيل القرآن الكريم</div>
+        <button class="oq-modal-close-btn" id="oqBtnClose" onclick="oqCloseModal()">×</button>
+      </div>
+
+      <!-- Info area (dynamic content) -->
+      <div id="oqModalInfo"></div>
+
+      <!-- Progress Section (hidden by default) -->
+      <div id="oqProgressSection" style="display:none;">
+        <div class="oq-progress-label" id="oqProgressLabel">جاري التنزيل...</div>
+        <div class="oq-progress-track">
+          <div class="oq-progress-fill" id="oqProgressFill"></div>
+        </div>
+        <div class="oq-progress-meta">
+          <span class="oq-progress-pct" id="oqProgressPct">0%</span>
+          <span class="oq-progress-count" id="oqProgressCount">0 / 114 سورة</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="oq-btn-row">
+        <button class="oq-btn oq-btn--primary" id="oqBtnStart" onclick="oqStartDownload()">
+          ⬇ ابدأ التنزيل
+        </button>
+        <button class="oq-btn oq-btn--cancel" id="oqBtnCancel" onclick="oqUserCancel()" style="display:none;">
+          ⏹ إيقاف
+        </button>
+        <button class="oq-btn oq-btn--secondary" id="oqBtnClose2" onclick="oqCloseModal()">
+          إغلاق
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <script src="app.js"></script>
+  <script src="offline_quran.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

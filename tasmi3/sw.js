@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tasmi3-v43-cache';
+const CACHE_NAME = 'tasmi3-v44-cache';
 const urlsToCache = [
   './index.html',
   './needs_review.html',
@@ -6,6 +6,7 @@ const urlsToCache = [
   './perfect.html',
   './style.css',
   './app.js',
+  './offline_quran.js',
   './review_boards.js',
   './adhkar.html',
   './adhkar.js',

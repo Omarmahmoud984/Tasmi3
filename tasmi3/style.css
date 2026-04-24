@@ -2477,3 +2477,332 @@ header.collapsed .btn-header-toggle {
     transform: rotate(360deg);
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   OFFLINE QURAN DOWNLOAD SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Nav sidebar download button ── */
+.oq-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: right;
+  border: 1px solid var(--gold-line);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 12px;
+  font-size: 0.92rem;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.oq-nav-btn:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.oq-nav-btn:active {
+  transform: scale(0.97);
+}
+
+/* Download status badge (shown next to the nav button) */
+.oq-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-right: auto;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.oq-badge--done {
+  background: rgba(30, 77, 56, 0.5);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.oq-badge--partial {
+  background: rgba(212, 168, 83, 0.15);
+  color: var(--gold);
+  border: 1px solid var(--gold-line);
+}
+
+/* ── Modal Overlay ── */
+.oq-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.oq-modal-overlay.oq-modal--open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── Modal Card ── */
+.oq-modal-card {
+  background: var(--bg2);
+  border: 1px solid var(--gold-line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  direction: rtl;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.oq-modal--open .oq-modal-card {
+  transform: translateY(0) scale(1);
+}
+
+/* Modal header */
+.oq-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--gold-line);
+  padding-bottom: 14px;
+}
+
+.oq-modal-title {
+  font-family: 'Cairo', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oq-modal-close-btn {
+  background: var(--surface);
+  border: 1px solid var(--gold-line);
+  color: var(--text2);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.oq-modal-close-btn:hover {
+  background: var(--gold-dim);
+  color: var(--gold);
+}
+
+/* Info rows */
+.oq-info-row {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.oq-info-row b {
+  color: var(--gold);
+}
+
+.oq-hint {
+  color: var(--text2);
+  font-size: 0.83rem;
+}
+
+.oq-size {
+  color: var(--text3);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.oq-done-row {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.oq-error {
+  color: #ff8888;
+  font-weight: 600;
+  padding: 10px;
+  background: rgba(255, 80, 80, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 80, 80, 0.2);
+}
+
+/* ── Progress Section ── */
+#oqProgressSection {
+  margin-top: 18px;
+}
+
+.oq-progress-label {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+  min-height: 1.2em;
+  transition: all 0.2s;
+}
+
+.oq-progress-track {
+  width: 100%;
+  height: 10px;
+  background: var(--surface);
+  border: 1px solid var(--gold-line);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.oq-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1e4d38, var(--gold));
+  border-radius: 20px;
+  width: 0%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Animated shimmer on fill */
+.oq-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  animation: oqShimmer 1.5s ease-in-out infinite;
+  border-radius: inherit;
+}
+
+@keyframes oqShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.oq-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.oq-progress-pct {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.oq-progress-count {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+/* ── Action Buttons ── */
+.oq-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.oq-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.oq-btn:active {
+  transform: scale(0.96);
+}
+
+.oq-btn--primary {
+  background: linear-gradient(135deg, #1e4d38, #2a6b4f);
+  color: #fff;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow: 0 4px 15px rgba(30, 77, 56, 0.4);
+}
+
+.oq-btn--primary:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 6px 20px rgba(30, 77, 56, 0.5);
+}
+
+.oq-btn--cancel {
+  background: var(--surface);
+  color: #ff8888;
+  border: 1px solid rgba(255, 100, 100, 0.3);
+}
+
+.oq-btn--cancel:hover {
+  background: rgba(255, 80, 80, 0.1);
+}
+
+.oq-btn--secondary {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--gold-line);
+}
+
+.oq-btn--secondary:hover {
+  background: var(--gold-dim);
+  color: var(--gold);
+}
+
+.oq-btn--danger {
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8888;
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+
+.oq-btn--danger:hover {
+  background: rgba(255, 80, 80, 0.15);
+}
+
+/* Light theme adjustments */
+body.theme-light .oq-modal-card {
+  border-color: var(--gold-line);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+body.theme-light .oq-progress-track {
+  background: rgba(0,0,0,0.05);
+}

@@ -329,46 +329,58 @@ async function loadSurah(id) {
   if (!SURAHS[id]) {
     const container = document.getElementById('ayahsContainer');
     container.innerHTML = '<div style="text-align:center; color: var(--gold); font-size: 1.5rem; margin-top: 40px; animation: sajdaPulse 1.5s infinite;">جاري التحميل...</div>';
-    try {
-      let data;
-      const surahApiUrl = 'https://api.alquran.cloud/v1/surah/' + id;
 
-      let cachedSurah = localStorage.getItem('tasmi3_api_surah_' + id);
-      if (cachedSurah) {
-        data = JSON.parse(cachedSurah);
-      } else {
-        const res = await fetch(surahApiUrl);
-        if (!res.ok) throw new Error('Network Error');
-        data = await res.json();
-        try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch (e) { }
+    // ── Priority 1: IndexedDB (offline-downloaded surahs) ──
+    if (typeof oqGetSurahOffline === 'function') {
+      const offlineData = await oqGetSurahOffline(parseInt(id));
+      if (offlineData) {
+        SURAHS[id] = offlineData;
       }
+    }
 
-      let ayahsList = [];
-      data.data.ayahs.forEach((a, i) => {
-        let text = a.text;
-        // Strip Bismillah from first ayah (robust - strips diacritics to detect)
-        if (id != 1 && id != 9 && i === 0) {
-          const bare = text.replace(/[\u064B-\u065F\u06D6-\u06ED\u0670\u0640\u06E1]/g, '');
-          if (bare.startsWith('\u0628\u0633\u0645') || bare.startsWith('\u0628\u0650\u0633')) {
-            const words = text.split(/\s+/);
-            text = words.slice(4).join(' ');
-          }
+    if (!SURAHS[id]) {
+      // ── Priority 2: localStorage cache → Priority 3: Network ──
+      try {
+        let data;
+        const surahApiUrl = 'https://api.alquran.cloud/v1/surah/' + id;
+
+        let cachedSurah = localStorage.getItem('tasmi3_api_surah_' + id);
+        if (cachedSurah) {
+          data = JSON.parse(cachedSurah);
+        } else {
+          const res = await fetch(surahApiUrl);
+          if (!res.ok) throw new Error('Network Error');
+          data = await res.json();
+          try { localStorage.setItem('tasmi3_api_surah_' + id, JSON.stringify(data)); } catch (e) { }
         }
-        ayahsList.push(text);
-      });
 
-      let sajdaIndex = undefined;
-      const s = data.data.ayahs.find(a => a.sajda);
-      if (s) sajdaIndex = s.numberInSurah - 1;
+        let ayahsList = [];
+        data.data.ayahs.forEach((a, i) => {
+          let text = a.text;
+          // Strip Bismillah from first ayah (robust - strips diacritics to detect)
+          if (id != 1 && id != 9 && i === 0) {
+            const bare = text.replace(/[\u064B-\u065F\u06D6-\u06ED\u0670\u0640\u06E1]/g, '');
+            if (bare.startsWith('\u0628\u0633\u0645') || bare.startsWith('\u0628\u0650\u0633')) {
+              const words = text.split(/\s+/);
+              text = words.slice(4).join(' ');
+            }
+          }
+          ayahsList.push(text);
+        });
 
-      SURAHS[id] = {
-        name: data.data.name.replace('سُورَةُ ', '').replace('سورة ', ''),
-        ayahs: ayahsList,
-        sajda: sajdaIndex
-      };
-    } catch (err) {
-      container.innerHTML = '<div style="text-align:center; color: #ff8888; font-size: 1.2rem; margin-top: 40px;">فشل التحميل. تأكد من الاتصال بالإنترنت.</div>';
-      return;
+        let sajdaIndex = undefined;
+        const s = data.data.ayahs.find(a => a.sajda);
+        if (s) sajdaIndex = s.numberInSurah - 1;
+
+        SURAHS[id] = {
+          name: data.data.name.replace('سُورَةُ ', '').replace('سورة ', ''),
+          ayahs: ayahsList,
+          sajda: sajdaIndex
+        };
+      } catch (err) {
+        container.innerHTML = '<div style="text-align:center; color: #ff8888; font-size: 1.2rem; margin-top: 40px;">فشل التحميل. تأكد من الاتصال بالإنترنت.</div>';
+        return;
+      }
     }
   }
 
