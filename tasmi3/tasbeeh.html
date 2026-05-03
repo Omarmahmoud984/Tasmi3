@@ -272,6 +272,36 @@
       transform: scale(0.96);
     }
 
+    /* Share button */
+    #btnShare {
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+
+    #btnShare:hover {
+      background: rgba(212, 168, 83, 0.28);
+      border-color: var(--gold);
+    }
+
+    #btnShare:active {
+      transform: scale(0.96);
+    }
+
+    #btnShare.copied {
+      background: rgba(42, 180, 100, 0.18);
+      border-color: rgba(42, 180, 100, 0.45);
+      color: #5ecf8a;
+    }
+
     /* ── Hint text ── */
     #tapHint {
       position: fixed;
@@ -383,6 +413,7 @@
       <button id="btnStart" onclick="startCountdown()">ابدأ العد التنازلي</button>
     </div>
     <button id="btnReset" onclick="resetCounter()">↺ إعادة ضبط</button>
+    <button id="btnShare" onclick="shareTasbeeh(targetCount)">🔗 نسخ الرابط</button>
   </div>
 
   <!-- Completion popup -->
@@ -565,7 +596,40 @@
     // ── Init ──
     render();
 
-    // Auto-hide hint after 4 seconds
+    // Deep-link: restore target from ?target= URL param
+    (function () {
+      const param = new URLSearchParams(window.location.search).get('target');
+      const val = parseInt(param);
+      if (val && val >= 1 && val <= 9999) {
+        cdInput.value = val;
+        startCountdown();
+      }
+    })();
+
+    // ── Share ──
+    function shareTasbeeh(target) {
+      const url = `${window.location.origin}${window.location.pathname}${target > 0 ? '?target=' + target : ''}`;
+      const btn = document.getElementById('btnShare');
+
+      // Always copy to clipboard
+      navigator.clipboard.writeText(url).then(() => {
+        // Visual confirmation on the button
+        btn.textContent = '✓ تم النسخ';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '🔗 نسخ الرابط';
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(() => {
+        // Fallback for browsers that block clipboard without HTTPS
+        prompt('انسخ الرابط:', url);
+      });
+
+      // Also trigger native share sheet on mobile if available
+      if (navigator.share) {
+        navigator.share({ title: 'تسبيح', text: 'ابدأ التسبيح', url: url }).catch(() => {});
+      }
+    }
     setTimeout(() => { tapHint.style.opacity = '0'; }, 4000);
   </script>
 </body>
