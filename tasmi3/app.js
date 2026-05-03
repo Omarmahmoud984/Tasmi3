@@ -18,6 +18,14 @@ try {
   }
 } catch (e) { }
 
+// ── Arabic Search Normalization ──
+// Compiled once; strips all diacritics (tashkeel), dagger-alef, Quranic
+// annotation signs, and tatweel so search works with or without diacritics.
+const _ARABIC_DIACRITICS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
+function normalizeArabic(text) {
+  return text.replace(_ARABIC_DIACRITICS_RE, '');
+}
+
 
 
 // ── State ──
@@ -1387,6 +1395,9 @@ function initCustomSelect() {
     div.className = 'custom-option';
     div.textContent = opt.text;
     div.dataset.value = opt.value;
+    // Pre-cache normalized (diacritics-stripped) name so the search
+    // listener never runs regex inside the keystroke loop.
+    div.dataset.normalized = normalizeArabic(opt.text);
     div.addEventListener('click', () => {
       nativeSelect.value = opt.value;
       textSpan.textContent = opt.text;
@@ -1411,9 +1422,11 @@ function initCustomSelect() {
   });
 
   search.addEventListener('input', (e) => {
-    const val = e.target.value;
+    // Normalize query so typing with or without diacritics both work.
+    const val = normalizeArabic(e.target.value);
     Array.from(optionsDiv.children).forEach(opt => {
-      if (opt.textContent.includes(val)) opt.classList.remove('hidden');
+      // Compare against the pre-cached normalized name (no regex in loop).
+      if (opt.dataset.normalized.includes(val)) opt.classList.remove('hidden');
       else opt.classList.add('hidden');
     });
   });
