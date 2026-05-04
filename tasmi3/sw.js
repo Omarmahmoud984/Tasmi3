@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tasmi3-v46-cache';
+const CACHE_NAME = 'tasmi3-v47-cache';
 const urlsToCache = [
   './index.html',
   './search.html',
@@ -46,13 +46,26 @@ self.addEventListener('fetch', event => {
 
   // CACHE-FIRST STRATEGY:
   // Try to find the matching request in the cache.
-  // ignoreSearch prevents query params (?surah=X) from failing the cache match for index.html
+  // ignoreSearch prevents query params (?surah=X) from failing the cache match.
+  // ignoreVary bypasses header mismatches (like Accept-Encoding differences).
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true })
+    caches.match(event.request, { ignoreSearch: true, ignoreVary: true })
       .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
+        if (cachedResponse) return cachedResponse;
+
+        // Fallback: If Vercel redirected /page.html to /page and messed up the cache keys,
+        // we explicitly check the clean relative path.
+        const url = new URL(event.request.url);
+        if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+          const pathName = url.pathname.endsWith('.html') ? url.pathname.split('/').pop() : 'index.html';
+          return caches.match('./' + pathName, { ignoreSearch: true, ignoreVary: true })
+            .then(res => res || caches.match('./', { ignoreSearch: true, ignoreVary: true }));
         }
+        return null;
+      })
+      .then(cachedResponse => {
+        if (cachedResponse) return cachedResponse;
+
         // If not in cache, fetch from network
         return fetch(event.request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
@@ -60,6 +73,9 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
           return networkResponse;
+        }).catch(err => {
+          console.error('[SW] Offline fetch failed:', err);
+          throw err;
         });
       })
   );
