@@ -19,13 +19,203 @@ try {
 } catch (e) { }
 
 // ── Arabic Search Normalization ──
-// Compiled once; strips all diacritics (tashkeel), dagger-alef, Quranic
-// annotation signs, and tatweel so search works with or without diacritics.
-const _ARABIC_DIACRITICS_RE = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
+// Compiled once; strips all diacritics (tashkeel), Quranic annotation signs,
+// and tatweel so search works with or without diacritics.
+// Dagger alif (U+0670) is replaced with normal alef (not stripped) because
+// Also strips invisible Unicode: HAIR SPACE, ZWSP, ZWNJ, ZWJ, WORD JOINER, BOM.
+const _ARABIC_DIACRITICS_RE = /[\u064B-\u065F\u06D6-\u06ED\u0640\u200A\u200B\u200C\u200D\u2060\uFEFF]/g;
+const _ALEF_RE = /[أإآٱ\u0670]/g;
+const _YA_RE = /[ىئ\u06CC]/g;
+const _WAW_HAMZA_RE = /ؤ/g;
 function normalizeArabic(text) {
-  return text.replace(_ARABIC_DIACRITICS_RE, '');
+  return text.replace(_ALEF_RE, 'ا').replace(_ARABIC_DIACRITICS_RE, '').replace(_YA_RE, 'ي').replace(_WAW_HAMZA_RE, 'و');
 }
 
+// ── Search Highlight Helpers ──
+// Used when navigating from search.html → index.html?surah=X&ayah=Y&q=QUERY
+// Highlights the matched query text inside the ayah while preserving diacritics.
+
+function _highlightInNode(container, query) {
+  const fullText = container.textContent;
+  const normQuery = normalizeArabic(query);
+  if (!normQuery || !fullText) return;
+
+  // Walk all text nodes, collect them with their positions
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  let node;
+  while (node = walker.nextNode()) {
+    nodes.push({ node, start: 0, text: node.textContent });
+  }
+  let cum = 0;
+  for (const n of nodes) { n.start = cum; cum += n.text.length; }
+
+  // Build norm map (with ا kept)
+  function _buildMap(stripAlef) {
+    const chars = [], map = [];
+    let pendingPos = -1;
+    for (let i = 0; i < fullText.length; i++) {
+      const ch = fullText[i];
+      _ARABIC_DIACRITICS_RE.lastIndex = 0;
+      if (_ARABIC_DIACRITICS_RE.test(ch)) continue;
+      const nc = ch.replace(_ALEF_RE, 'ا').replace(_YA_RE, 'ي');
+      if (stripAlef && nc === 'ا') {
+        if (pendingPos === -1) pendingPos = i;
+        continue;
+      }
+      map.push(stripAlef && pendingPos !== -1 ? pendingPos : i);
+      pendingPos = -1;
+      chars.push(nc);
+    }
+    return { normalized: chars.join(''), map };
+  }
+
+  // Find matches in a normalized string
+  function _findMatches(normalized, q, map) {
+    const matches = [];
+    let si = 0;
+    while (si <= normalized.length - q.length) {
+      const found = normalized.indexOf(q, si);
+      if (found === -1) break;
+      const origStart = map[found];
+      const origEnd = (found + q.length < map.length) ? map[found + q.length] : fullText.length;
+      matches.push({ start: origStart, end: origEnd });
+      si = found + q.length;
+    }
+    return matches;
+  }
+
+  // Try exact match first, then loose (strip ا)
+  let { normalized, map } = _buildMap(false);
+  let matches = _findMatches(normalized, normQuery, map);
+
+  if (!matches.length) {
+    const loose = _buildMap(true);
+    const looseQ = normQuery.replace(/ا/g, '');
+    if (looseQ) matches = _findMatches(loose.normalized, looseQ, loose.map);
+  }
+  if (!matches.length) return;
+
+  // Apply <mark> (backwards to preserve positions)
+  for (let mi = matches.length - 1; mi >= 0; mi--) {
+    const m = matches[mi];
+    for (let ni = nodes.length - 1; ni >= 0; ni--) {
+      const n = nodes[ni];
+      const nEnd = n.start + n.text.length;
+      if (m.start >= nEnd || m.end <= n.start) continue;
+      const localStart = Math.max(0, m.start - n.start);
+      const localEnd = Math.min(n.text.length, m.end - n.start);
+      const before = n.node.textContent.slice(0, localStart);
+      const matched = n.node.textContent.slice(localStart, localEnd);
+      const after = n.node.textContent.slice(localEnd);
+
+      const frag = document.createDocumentFragment();
+      if (before) frag.appendChild(document.createTextNode(before));
+      const mark = document.createElement('mark');
+      mark.textContent = matched;
+      frag.appendChild(mark);
+      if (after) frag.appendChild(document.createTextNode(after));
+      n.node.parentNode.replaceChild(frag, n.node);
+    }
+  }
+}
+
+
+/** Normal mode: highlight query inside .ayah-text of a specific block */
+function _applySearchHighlight(block, query) {
+  const textDiv = block.querySelector('.ayah-text');
+  if (textDiv) _highlightInNode(textDiv, query);
+}
+
+/** Mushaf mode: highlight query only within a specific ayah's words in .mushaf-text */
+function _applySearchHighlightMushaf(query, ayahIdx) {
+  const mushafP = document.querySelector('.mushaf-text');
+  if (!mushafP || ayahIdx === null || ayahIdx === undefined) return;
+
+  const wordSpans = mushafP.querySelectorAll(`.word[data-ayah="${ayahIdx}"]`);
+  if (!wordSpans.length) return;
+
+  const texts = Array.from(wordSpans).map(s => s.textContent);
+  const fullText = texts.join(' ');
+  const normQuery = normalizeArabic(query);
+  if (!normQuery) return;
+
+  // Build norm map, optionally stripping ا
+  function _buildMap(stripAlef) {
+    const chars = [], map = [];
+    let pendingPos = -1;
+    for (let i = 0; i < fullText.length; i++) {
+      const ch = fullText[i];
+      _ARABIC_DIACRITICS_RE.lastIndex = 0;
+      if (_ARABIC_DIACRITICS_RE.test(ch)) continue;
+      const nc = ch.replace(_ALEF_RE, 'ا').replace(_YA_RE, 'ي');
+      if (stripAlef && nc === 'ا') {
+        if (pendingPos === -1) pendingPos = i;
+        continue;
+      }
+      map.push(stripAlef && pendingPos !== -1 ? pendingPos : i);
+      pendingPos = -1;
+      chars.push(nc);
+    }
+    return { normalized: chars.join(''), map };
+  }
+
+  function _findMatches(normalized, q, map) {
+    const matches = [];
+    let si = 0;
+    while (si <= normalized.length - q.length) {
+      const found = normalized.indexOf(q, si);
+      if (found === -1) break;
+      const origStart = map[found];
+      const origEnd = (found + q.length < map.length) ? map[found + q.length] : fullText.length;
+      matches.push({ start: origStart, end: origEnd });
+      si = found + q.length;
+    }
+    return matches;
+  }
+
+  // Try exact, then loose
+  let { normalized, map } = _buildMap(false);
+  let matches = _findMatches(normalized, normQuery, map);
+  if (!matches.length) {
+    const loose = _buildMap(true);
+    const looseQ = normQuery.replace(/ا/g, '');
+    if (looseQ) matches = _findMatches(loose.normalized, looseQ, loose.map);
+  }
+  if (!matches.length) return;
+
+  // Map character positions back to individual word spans
+  let offset = 0;
+  const wordOffsets = [];
+  for (const span of wordSpans) {
+    const len = span.textContent.length;
+    wordOffsets.push({ span, start: offset, end: offset + len });
+    offset += len + 1;
+  }
+
+  // Apply <mark> to overlapping word spans
+  for (const m of matches) {
+    for (const wo of wordOffsets) {
+      if (m.start >= wo.end || m.end <= wo.start) continue;
+      const wordText = wo.span.querySelector('.word-text');
+      if (!wordText) continue;
+      const txt = wordText.textContent;
+      const localStart = Math.max(0, m.start - wo.start);
+      const localEnd = Math.min(txt.length, m.end - wo.start);
+
+      const before = txt.slice(0, localStart);
+      const matched = txt.slice(localStart, localEnd);
+      const after = txt.slice(localEnd);
+
+      wordText.innerHTML = '';
+      if (before) wordText.appendChild(document.createTextNode(before));
+      const mark = document.createElement('mark');
+      mark.textContent = matched;
+      wordText.appendChild(mark);
+      if (after) wordText.appendChild(document.createTextNode(after));
+    }
+  }
+}
 
 
 // ── State ──
@@ -33,6 +223,10 @@ let hideDelay = 4000;
 let totalWords = 0;
 let revealedCount = 0;
 let currentSurah = 1;
+
+// ── Search Navigation State (persists across mode toggles) ──
+let _searchHighlightQuery = null;  // e.g. "الله لا اله"
+let _searchHighlightAyah = null;  // 0-based ayah index
 let isHardcoreMode = false;
 let wordTimers = {};
 
@@ -325,10 +519,36 @@ function _proceedStartApp() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const surahParam = urlParams.get('surah');
+  const ayahParam = urlParams.get('ayah');
   const lastSurah = localStorage.getItem('tasmi3_last_surah') || currentSurah;
 
   const targetSurah = (surahParam && parseInt(surahParam) >= 1 && parseInt(surahParam) <= 114) ? surahParam : lastSurah;
-  loadSurah(targetSurah);
+
+  loadSurah(targetSurah).then(() => {
+    if (ayahParam) {
+      const ayahIdx = parseInt(ayahParam) - 1; // 0-based index
+      if (ayahIdx >= 0) {
+        // Force-render ayahs up to the target (handles progressive loading)
+        _ensureAyahsLoadedUpTo(ayahIdx);
+
+        // Find the ayah block and scroll to it
+        setTimeout(() => {
+          const block = document.querySelector(`.ayah-block[data-ayah-idx="${ayahIdx}"]`);
+          if (block) {
+            block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Brief gold flash to highlight the target ayah
+            block.style.transition = 'box-shadow 0.3s, border-color 0.3s';
+            block.style.boxShadow = '0 0 20px rgba(212,168,83,0.5)';
+            block.style.borderColor = 'var(--gold)';
+            setTimeout(() => {
+              block.style.boxShadow = '';
+              block.style.borderColor = '';
+            }, 2000);
+          }
+        }, 150);
+      }
+    }
+  });
 }
 
 async function loadSurah(id) {
@@ -1026,12 +1246,29 @@ function toggleMushafMode() {
     btn.style.borderColor = 'var(--gold)';
     saveRevealedState();
     renderMushafMode(currentSurah);
+    // Re-apply search highlight in mushaf mode
+    if (_searchHighlightQuery) {
+      _applySearchHighlightMushaf(_searchHighlightQuery, _searchHighlightAyah);
+    }
   } else {
     btn.style.background = 'transparent';
     btn.style.borderColor = 'var(--gold-line)';
     saveRevealedState();
     isMushafMode = false; // ensure loadSurah knows
-    loadSurah(currentSurah);
+    loadSurah(currentSurah).then(() => {
+      // Re-apply search highlight in normal mode
+      if (_searchHighlightQuery && _searchHighlightAyah !== null) {
+        _ensureAyahsLoadedUpTo(_searchHighlightAyah);
+        // Use timeout to allow DOM to flush after ensureAyahsLoadedUpTo
+        setTimeout(() => {
+          const block = document.querySelector(`.ayah-block[data-ayah-idx="${_searchHighlightAyah}"]`);
+          if (block) {
+            block.classList.add('search-glow');
+            _applySearchHighlight(block, _searchHighlightQuery);
+          }
+        }, 50);
+      }
+    });
   }
 
   // Restore scroll position to same ayah
@@ -1475,11 +1712,44 @@ async function initApi() {
       document.getElementById('customSurahText').textContent = initialOpt.text;
     }
 
-    // If a ?surah= param is present (coming from a board page), skip the overlay entirely
+    // If a ?surah= param is present (coming from a board/search page), skip the overlay entirely
     if (surahParam && parseInt(surahParam) >= 1 && parseInt(surahParam) <= 114) {
       const ov = document.getElementById('overlay');
       if (ov) { ov.style.display = 'none'; }
-      loadSurah(surahParam);
+
+      const ayahParam = urlParams.get('ayah');
+      const searchQuery = urlParams.get('q') ? decodeURIComponent(urlParams.get('q')) : null;
+
+      // Store globally so toggleMushafMode can re-apply highlights
+      _searchHighlightQuery = searchQuery;
+      _searchHighlightAyah = ayahParam ? parseInt(ayahParam) - 1 : null;
+
+      loadSurah(surahParam).then(() => {
+        if (ayahParam) {
+          const ayahIdx = parseInt(ayahParam) - 1; // 0-based
+          if (ayahIdx >= 0) {
+            _ensureAyahsLoadedUpTo(ayahIdx);
+            setTimeout(() => {
+              const block = document.querySelector(`.ayah-block[data-ayah-idx="${ayahIdx}"]`);
+              if (block) {
+                // Permanent gold glow on the block (normal mode)
+                block.classList.add('search-glow');
+                block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Highlight the searched query inside the ayah text
+                if (searchQuery) {
+                  _applySearchHighlight(block, searchQuery);
+                }
+              }
+
+              // If mushaf mode is active, highlight in the mushaf text too
+              if (isMushafMode && searchQuery) {
+                _applySearchHighlightMushaf(searchQuery, ayahIdx);
+              }
+            }, 200);
+          }
+        }
+      });
     }
   } catch (e) {
     console.error(e);

@@ -1,30 +1,64 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ممتاز 🟢 - تسميع</title>
-  <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <style>
-    body { min-height: 100vh; display: flex; flex-direction: column; }
-    .header-compact { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--header-bg); border-bottom: 1px solid var(--gold-line); }
-    .page-title { color: #50c878; font-family: 'Cairo'; font-weight: bold; font-size: 1.5rem; margin: 0;}
-    .board-container { flex: 1; padding: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; align-content: start; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-compact {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 20px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--gold-line);
+    }
+
+    .page-title {
+      color: #50c878;
+      font-family: 'Cairo';
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .board-container {
+      flex: 1;
+      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      align-content: start;
+    }
   </style>
 </head>
+
 <body>
   <!-- Navigation Sidebar -->
   <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
   <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
       <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
       <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="search.html" class="nav-link">🔍 البحث في القرآن</a>
       <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
+      <a href="tasbeeh.html" class="nav-link">السبحة</a>
       <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
       <a href="good.html" class="nav-link">جيد 🟡</a>
       <a href="perfect.html" class="nav-link active">ممتاز 🟢</a>
@@ -43,8 +77,11 @@
   <div class="header-compact">
     <h1 class="page-title" style="font-size: 1.3rem;">🟢 حفظها ممتاز ومتين</h1>
     <div style="display: flex; gap: 8px; align-items: center;">
-      <a href="good.html" style="background: rgba(255,193,7,0.2); border: 1px solid var(--gold); color: var(--text); padding: 4px 8px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; white-space: nowrap;">🟡 السابق</a>
-      <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">☰</button>
+      <a href="good.html"
+        style="background: rgba(255,193,7,0.2); border: 1px solid var(--gold); color: var(--text); padding: 4px 8px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; white-space: nowrap;">🟡
+        السابق</a>
+      <button id="btnNav" onclick="toggleNavSidebar()"
+        style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s;">☰</button>
     </div>
   </div>
 
@@ -60,4 +97,5 @@
     }
   </script>
 </body>
+
 </html>

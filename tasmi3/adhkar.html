@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الأذكار — tasmi3</title>
-  <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <style>
@@ -15,6 +17,7 @@
       margin: 0 auto;
       padding: 20px 16px 130px;
     }
+
     .dhikr-card {
       background: var(--surface);
       border: 1px solid var(--gold-dim);
@@ -23,20 +26,26 @@
       margin-bottom: 16px;
       transition: all 0.2s;
     }
+
     .dhikr-card.completed {
-      background: rgba(42, 107, 79, 0.1); /* light green */
+      background: rgba(42, 107, 79, 0.1);
+      /* light green */
       border-color: var(--green2);
     }
+
     .dhikr-card:hover {
       border-color: var(--gold-line);
     }
+
     .dhikr-text {
-      font-size: 1.15rem; /* Zoomed out from 1.3rem */
+      font-size: 1.15rem;
+      /* Zoomed out from 1.3rem */
       line-height: 1.7;
       font-family: 'Cairo', sans-serif;
       color: var(--text);
       margin-bottom: 16px;
     }
+
     .dhikr-controls {
       display: flex;
       justify-content: space-between;
@@ -44,6 +53,7 @@
       border-top: 1px solid var(--gold-line);
       padding-top: 12px;
     }
+
     .dhikr-count-circle {
       display: inline-flex;
       align-items: center;
@@ -61,24 +71,29 @@
       -webkit-tap-highlight-color: transparent;
       transition: all 0.2s;
     }
+
     .dhikr-count-circle:active {
       transform: scale(0.9);
     }
+
     .dhikr-count-circle.finished {
       background: var(--green2);
       border-color: var(--green);
       color: white;
     }
+
     .dhikr-info-icon {
       font-size: 1.4rem;
       color: var(--text2);
       cursor: pointer;
       transition: all 0.2s;
     }
+
     .dhikr-info-icon:hover {
       color: var(--blue2);
       transform: scale(1.1);
     }
+
     .dhikr-expand-btn {
       background: none;
       border: none;
@@ -90,31 +105,39 @@
       justify-content: center;
       transition: transform 0.2s;
     }
+
     .sub-dhikr-container {
       display: none;
       margin-top: 15px;
       padding-top: 15px;
       border-top: 1px dashed var(--gold-line);
     }
+
     .sub-dhikr-container.show {
       display: block;
     }
+
     .sub-dhikr-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
     }
+
     .sub-dhikr-item:last-child {
       margin-bottom: 0;
     }
+
     .sub-dhikr-text {
-      font-size: 1.05rem; /* Zoomed out from 1.2rem */
+      font-size: 1.05rem;
+      /* Zoomed out from 1.2rem */
       font-family: 'Cairo', sans-serif;
       color: var(--text);
-      flex: 1; /* allow text to breathe and push container slightly */
+      flex: 1;
+      /* allow text to breathe and push container slightly */
       padding-left: 10px;
     }
+
     .sub-circle {
       width: 54px;
       height: 54px;
@@ -184,13 +207,16 @@
   <!-- Navigation Sidebar -->
   <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
   <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
       <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
       <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="search.html" class="nav-link">🔍 البحث في القرآن</a>
       <a href="adhkar.html" class="nav-link active" style="color: var(--gold);">الأذكار 📿</a>
+      <a href="tasbeeh.html" class="nav-link">السبحة</a>
       <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
       <a href="good.html" class="nav-link">جيد 🟡</a>
       <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
@@ -216,12 +242,14 @@
         <button id="btnThemeDark" onclick="setAdhkarTheme('dark')">🌙</button>
         <button id="btnThemeLight" onclick="setAdhkarTheme('light')">☀️</button>
       </div>
-      <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s; height: 36px;">☰</button>
+      <button id="btnNav" onclick="toggleNavSidebar()"
+        style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold; transition: all 0.2s; height: 36px;">☰</button>
     </div>
   </header>
 
   <div class="adhkar-container">
-    <div class="tabs-header" style="border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; border: 1px solid var(--gold-line);">
+    <div class="tabs-header"
+      style="border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; border: 1px solid var(--gold-line);">
       <button class="tab-btn active" onclick="switchAdhkarTab('morning', this)">أذكار الصباح</button>
       <button class="tab-btn" onclick="switchAdhkarTab('evening', this)">أذكار المساء</button>
       <button class="tab-btn" onclick="switchAdhkarTab('after_prayer', this)">بعد الصلاة</button>
@@ -291,7 +319,7 @@
       });
 
       if (navigator.share) {
-        navigator.share({ title: 'الأذكار', text: 'أذكار ' + section, url: url }).catch(() => {});
+        navigator.share({ title: 'الأذكار', text: 'أذكار ' + section, url: url }).catch(() => { });
       }
     }
 
@@ -307,4 +335,5 @@
     })();
   </script>
 </body>
+
 </html>

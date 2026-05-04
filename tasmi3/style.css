@@ -2880,3 +2880,31 @@ body.theme-light .oq-progress-track {
   }
 }
 
+/* ═══ SEARCH → AYAH NAVIGATION GLOW ═══ */
+
+/* Permanent gold glow on the targeted ayah block (normal mode) */
+.ayah-block.search-glow {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 18px rgba(212, 168, 83, 0.45), inset 0 0 12px rgba(212, 168, 83, 0.08);
+}
+
+.theme-light .ayah-block.search-glow {
+  box-shadow: 0 0 18px rgba(173, 125, 43, 0.3), inset 0 0 12px rgba(173, 125, 43, 0.06);
+}
+
+/* Highlighted search match inside ayah text (both normal + mushaf) */
+.ayah-text mark,
+.mushaf-text mark {
+  background: transparent;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(212, 168, 83, 0.4);
+  border-radius: 0;
+  padding: 0;
+}
+
+.theme-light .ayah-text mark,
+.theme-light .mushaf-text mark {
+  background: transparent;
+  color: #ad7d2b; /* A slightly darker gold for light theme */
+  text-shadow: 0 0 5px rgba(173, 125, 43, 0.3);
+}

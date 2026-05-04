@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بحث في القرآن - تسميع</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .search-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--gold-line);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nav-toggle {
+      flex-shrink: 0;
+      background: var(--gold);
+      border: none;
+      color: var(--bg);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-nav-toggle:hover {
+      opacity: 0.85;
+    }
+
+    /* ── Search Input ── */
+    .search-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    #searchInput {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--gold-line);
+      border-radius: 12px;
+      padding: 11px 16px 11px 42px;
+      font-family: 'Scheherazade New', serif;
+      font-size: 1.4rem;
+      color: var(--text);
+      outline: none;
+      direction: rtl;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #searchInput:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.15);
+    }
+
+    #searchInput::placeholder {
+      color: var(--text3);
+      font-size: 1.15rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    /* ── Status Bar ── */
+    #statusBar {
+      padding: 7px 18px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text3);
+    }
+
+    .status-count {
+      color: var(--gold);
+      font-weight: bold;
+    }
+
+    .spinner {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      border: 2px solid var(--gold-line);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Results Container ── */
+    #resultsContainer {
+      flex: 1;
+      padding: 4px 14px 50px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ── Result Card ── */
+    .result-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--gold-line);
+      border-radius: 14px;
+      padding: 15px 17px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .result-card:hover {
+      background: rgba(212, 168, 83, 0.05);
+      border-color: rgba(212, 168, 83, 0.5);
+    }
+
+    .result-card:active {
+      transform: scale(0.985);
+      background: var(--gold-dim);
+    }
+
+    .result-ayah-text {
+      font-family: 'Scheherazade New', serif;
+      font-size: 1.5rem;
+      line-height: 2.4rem;
+      color: var(--text);
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .result-ayah-text mark {
+      background: rgba(212, 168, 83, 0.35);
+      color: inherit;
+      border-radius: 3px;
+      padding: 0 2px;
+      animation: markPop 0.35s ease;
+    }
+
+    @keyframes markPop {
+      from {
+        background: rgba(212, 168, 83, 0.65);
+      }
+
+      to {
+        background: rgba(212, 168, 83, 0.35);
+      }
+    }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .result-surah-name {
+      color: var(--gold);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .result-ayah-num {
+      color: var(--text3);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.78rem;
+    }
+
+    .result-source {
+      margin-right: auto;
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.7rem;
+      color: var(--text3);
+      opacity: 0.65;
+    }
+
+    /* ── Welcome / Empty States ── */
+    .center-state {
+      text-align: center;
+      padding: 70px 20px;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .center-state .icon {
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+    }
+
+    .center-state .title {
+      font-family: 'Scheherazade New', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+      text-shadow: 0 0 18px rgba(212, 168, 83, 0.3);
+      margin-bottom: 8px;
+    }
+
+    .center-state .sub {
+      font-size: 0.88rem;
+      color: var(--text3);
+    }
+
+    /* ── Section Label ── */
+    .section-label {
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.76rem;
+      color: var(--text3);
+      padding: 6px 2px 0;
+      letter-spacing: 0.4px;
+    }
+
+    @media (max-width: 480px) {
+      .result-ayah-text {
+        font-size: 1.25rem;
+        line-height: 2.1rem;
+      }
+
+      #resultsContainer {
+        padding: 4px 8px 50px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Nav Sidebar -->
+  <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
+  <div class="sidebar" id="navSidebar" style="right:auto;left:0;transform:translateX(-100%);">
+    <div
+      style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gold-line);padding-bottom:10px;margin-bottom:15px;">
+      <h2 style="color:var(--gold);font-family:'Cairo';margin:0;font-size:1.2rem;">متابعة الحفظ</h2>
+      <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">🏠 الرئيسية</a>
+      <a href="search.html" class="nav-link active">🔍 البحث في القرآن</a>
+      <a href="adhkar.html" class="nav-link">الأذكار 📿</a>
+      <a href="tasbeeh.html" class="nav-link">السبحة</a>
+      <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
+      <a href="good.html" class="nav-link">جيد 🟡</a>
+      <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
+      <div class="nav-toggle-row">
+        <span>إشعارات الصلاة على النبي ﷺ</span>
+        <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="search-header">
+    <button class="btn-nav-toggle" onclick="toggleNavSidebar()">☰</button>
+    <div class="search-input-wrap">
+      <input type="search" id="searchInput" placeholder="ابحث في القرآن الكريم..." autocomplete="off" autocorrect="off"
+        spellcheck="false" dir="rtl">
+      <span class="search-icon">🔍</span>
+    </div>
+  </header>
+
+  <!-- Status Bar -->
+  <div id="statusBar"></div>
+
+  <!-- Results -->
+  <div id="resultsContainer">
+    <div class="center-state">
+      <div class="title">﴿ وَنُنَزِّلُ مِنَ الْقُرْآنِ ﴾</div>
+      <div class="sub">ابدأ الكتابة للبحث في آيات القرآن الكريم</div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ══════════════════════════════════════════════════════
+    //  CONFIG
+    // ══════════════════════════════════════════════════════
+    const SURAH_NAMES = [
+      "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس",
+      "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه",
+      "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم",
+      "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
+      "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق",
+      "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة",
+      "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج",
+      "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس",
+      "التكوير", "الانفطار", "المطففين", "الانشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد",
+      "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات",
+      "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
+      "المسد", "الإخلاص", "الفلق", "الناس"
+    ];
+
+    const IDB_NAME = 'tasmi3_quran_offline';
+    const IDB_STORE = 'surahs';
+    const CACHE_PREFIX = 'tasmi3_srch_';
+    const DEBOUNCE_MS = 300;
+    const MAX_RESULTS = Infinity;
+    const API_BASE = 'https://api.alquran.cloud/v1/search/';
+
+    // ══════════════════════════════════════════════════════
+    //  ARABIC NORMALIZATION
+    //  Compiled once at module level — never re-created in loops.
+    // ══════════════════════════════════════════════════════
+    // Dagger alif (U+0670) → ا (not stripped!) because it's an alif sound.
+    // Order: replace alef variants FIRST, then strip diacritics.
+    // Also strip invisible Unicode: HAIR SPACE, ZWSP, ZWNJ, ZWJ, WORD JOINER, BOM.
+    const _RE_TASHKEEL = /[\u064B-\u065F\u06D6-\u06ED\u0640\u200A\u200B\u200C\u200D\u2060\uFEFF]/g;
+    const _RE_ALEF = /[أإآٱ\u0670]/g;
+    const _RE_YA = /[ىئ\u06CC]/g;
+    const _RE_WAW_HAMZA = /ؤ/g;
+
+    function normalizeArabic(text) {
+      return text
+        .replace(_RE_ALEF, 'ا')
+        .replace(_RE_TASHKEEL, '')
+        .replace(_RE_YA, 'ي')
+        .replace(_RE_WAW_HAMZA, 'و');
+    }
+
+    // Loose comparison helper: strip all ا so dagger-alif positions become optional.
+    // "صراط" → "صرط", "الرحمان" → "لرحمن", making both forms match.
+    const _RE_ALEF_STRIP = /ا/g;
+    function _looseNorm(text) { return normalizeArabic(text).replace(_RE_ALEF_STRIP, ''); }
+
+    // ══════════════════════════════════════════════════════
+    //  HIGHLIGHT ENGINE
+    //  Finds matches in normalized text, maps back to original
+    //  (preserving diacritics in the displayed, highlighted text).
+    // ══════════════════════════════════════════════════════
+    function _escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /**
+     * Build a parallel normalized string + an index map.
+     * map[i] = index in `original` that corresponds to normalized[i].
+     */
+    function _buildNormMap(original) {
+      const chars = [], map = [];
+      for (let i = 0; i < original.length; i++) {
+        const ch = original[i];
+        _RE_TASHKEEL.lastIndex = 0;
+        if (_RE_TASHKEEL.test(ch)) continue;
+        const nc = ch.replace(_RE_ALEF, 'ا').replace(_RE_YA, 'ي');
+        map.push(i);
+        chars.push(nc);
+      }
+      return { normalized: chars.join(''), map };
+    }
+
+    /** Same as _buildNormMap but also strips ا from the normalized output.
+     *  When ا is skipped, its position is inherited by the NEXT char so
+     *  highlights extend back to include the ا (e.g. "ال" fully highlighted). */
+    function _buildLooseNormMap(original) {
+      const chars = [], map = [];
+      let pendingPos = -1;
+      for (let i = 0; i < original.length; i++) {
+        const ch = original[i];
+        _RE_TASHKEEL.lastIndex = 0;
+        if (_RE_TASHKEEL.test(ch)) continue;
+        const nc = ch.replace(_RE_ALEF, 'ا').replace(_RE_YA, 'ي');
+        if (nc === 'ا') {
+          if (pendingPos === -1) pendingPos = i;
+          continue;
+        }
+        map.push(pendingPos !== -1 ? pendingPos : i);
+        pendingPos = -1;
+        chars.push(nc);
+      }
+      return { normalized: chars.join(''), map };
+    }
+
+    function _doHighlight(ayahText, normStr, normMap, queryNorm) {
+      const qLen = queryNorm.length;
+      let html = '', origIdx = 0, searchFrom = 0, found = false;
+      while (searchFrom <= normStr.length - qLen) {
+        const pos = normStr.indexOf(queryNorm, searchFrom);
+        if (pos === -1) break;
+        found = true;
+        const origStart = normMap[pos];
+        const origEnd = (pos + qLen < normMap.length) ? normMap[pos + qLen] : ayahText.length;
+        html += _escHtml(ayahText.slice(origIdx, origStart));
+        html += `<mark>${_escHtml(ayahText.slice(origStart, origEnd))}</mark>`;
+        origIdx = origEnd;
+        searchFrom = pos + qLen;
+      }
+      if (!found) return null;
+      html += _escHtml(ayahText.slice(origIdx));
+      return html;
+    }
+
+    function highlightText(ayahText, query) {
+      if (!query) return _escHtml(ayahText);
+      const normQuery = normalizeArabic(query);
+      if (!normQuery) return _escHtml(ayahText);
+
+      // Try exact normalized match first
+      const { normalized, map } = _buildNormMap(ayahText);
+      const result = _doHighlight(ayahText, normalized, map, normQuery);
+      if (result !== null) return result;
+
+      // Fallback: loose match (strip ا from both sides)
+      const loose = _buildLooseNormMap(ayahText);
+      const looseQ = normQuery.replace(_RE_ALEF_STRIP, '');
+      if (looseQ) {
+        const looseResult = _doHighlight(ayahText, loose.normalized, loose.map, looseQ);
+        if (looseResult !== null) return looseResult;
+      }
+
+      return _escHtml(ayahText);
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  INDEXEDDB HELPER
+    // ══════════════════════════════════════════════════════
+    let _idbPromise = null;
+    function _openIDB() {
+      if (_idbPromise) return _idbPromise;
+      _idbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE))
+            db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('meta'))
+            db.createObjectStore('meta', { keyPath: 'key' });
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => { _idbPromise = null; reject(req.error); };
+      });
+      return _idbPromise;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  OFFLINE SEARCH  (reads from IndexedDB)
+    //  Data format: { id, name, ayahs: [string, string, ...] }
+    //  Ayahs are a FLAT ARRAY of text strings, index 0 = ayah 1.
+    // ══════════════════════════════════════════════════════
+    async function searchOffline(query) {
+      const normQuery = normalizeArabic(query);
+      if (!normQuery) return [];
+
+      let db;
+      try { db = await _openIDB(); } catch { return []; }
+
+      let count = 0;
+      try {
+        count = await new Promise((res, rej) => {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const r = tx.objectStore(IDB_STORE).count();
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => rej(r.error);
+        });
+      } catch { return []; }
+      if (count === 0) return [];
+
+      // Search helper: scans all surahs with a given match function
+      function _scan(matchFn) {
+        return new Promise((resolve) => {
+          const results = [];
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).openCursor();
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (!cursor || results.length >= MAX_RESULTS) { resolve(results); return; }
+            const surah = cursor.value;
+            if (Array.isArray(surah.ayahs)) {
+              for (let i = 0; i < surah.ayahs.length; i++) {
+                if (results.length >= MAX_RESULTS) break;
+                const ayahText = surah.ayahs[i];
+                if (matchFn(ayahText)) {
+                  results.push({
+                    surahNum: surah.id,
+                    surahName: SURAH_NAMES[surah.id - 1] || surah.name,
+                    ayahNum: i + 1,
+                    text: ayahText,
+                    source: 'offline',
+                  });
+                }
+              }
+            }
+            cursor.continue();
+          };
+          req.onerror = () => resolve(results);
+        });
+      }
+
+      // Pass 1: exact normalized match
+      let results = await _scan(t => normalizeArabic(t).includes(normQuery));
+
+      // Pass 2: loose fallback (strip ا) — only if exact found nothing
+      if (!results.length) {
+        const looseQuery = _looseNorm(query);
+        if (looseQuery) {
+          results = await _scan(t => normalizeArabic(t).replace(_RE_ALEF_STRIP, '').includes(looseQuery));
+        }
+      }
+      return results;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  ONLINE SEARCH  (Fetch full Quran, cache, search locally)
+    //  The /search/ endpoint is unreliable (500s on short queries).
+    //  Instead: fetch /quran/ar once → store in IDB → search locally.
+    // ══════════════════════════════════════════════════════
+    const _QURAN_FULL_API = 'https://api.alquran.cloud/v1/quran/ar';
+    let _fullQuranCache = null; // in-memory: [{id, name, ayahs:[str,...]}, ...]
+
+    async function _ensureFullQuran(signal) {
+      // 1. Already in memory
+      if (_fullQuranCache) return _fullQuranCache;
+
+      // 2. Check IndexedDB
+      let db;
+      try { db = await _openIDB(); } catch { /* fall through */ }
+      if (db) {
+        const count = await new Promise((res) => {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const r = tx.objectStore(IDB_STORE).count();
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => res(0);
+        });
+        if (count >= 114) {
+          // Load all into memory
+          const all = await new Promise((res) => {
+            const arr = [];
+            const tx = db.transaction(IDB_STORE, 'readonly');
+            const req = tx.objectStore(IDB_STORE).openCursor();
+            req.onsuccess = (e) => {
+              const c = e.target.result;
+              if (!c) { res(arr); return; }
+              arr.push(c.value);
+              c.continue();
+            };
+            req.onerror = () => res(arr);
+          });
+          _fullQuranCache = all;
+          return _fullQuranCache;
+        }
+      }
+
+      // 3. Fetch from network
+      const resp = await fetch(_QURAN_FULL_API, { signal });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      const surahs = json?.data?.surahs;
+      if (!Array.isArray(surahs)) throw new Error('Invalid API response');
+
+      // Transform + store each surah in IDB (same format as offline_quran.js)
+      const parsed = [];
+      for (const s of surahs) {
+        const ayahTexts = s.ayahs.map((a, i) => {
+          let text = a.text;
+          // Strip Bismillah from first ayah (same logic as offline_quran.js)
+          if (s.number !== 1 && s.number !== 9 && i === 0) {
+            const bare = text.replace(/[\u064B-\u065F\u06D6-\u06ED\u0670\u0640\u06E1]/g, '');
+            if (bare.startsWith('\u0628\u0633\u0645') || bare.startsWith('\u0628\u0650\u0633')) {
+              const words = text.split(/\s+/);
+              text = words.slice(4).join(' ');
+            }
+          }
+          return text;
+        });
+        const obj = {
+          id: s.number,
+          name: s.name.replace('سُورَةُ ', '').replace('سورة ', ''),
+          ayahs: ayahTexts,
+          downloadedAt: Date.now(),
+        };
+        parsed.push(obj);
+        // Store in IDB for future offline use
+        if (db) {
+          try {
+            await new Promise((res, rej) => {
+              const tx = db.transaction(IDB_STORE, 'readwrite');
+              const r = tx.objectStore(IDB_STORE).put(obj);
+              r.onsuccess = () => res();
+              r.onerror = () => rej(r.error);
+            });
+          } catch { /* continue */ }
+        }
+      }
+      _fullQuranCache = parsed;
+      return _fullQuranCache;
+    }
+
+    async function searchOnline(query, signal) {
+      const normQuery = normalizeArabic(query);
+      if (!normQuery) return [];
+
+      let allSurahs;
+      try {
+        allSurahs = await _ensureFullQuran(signal);
+      } catch { return []; }
+
+      function _scan(matchFn) {
+        const results = [];
+        for (const surah of allSurahs) {
+          if (results.length >= MAX_RESULTS) break;
+          if (!Array.isArray(surah.ayahs)) continue;
+          for (let i = 0; i < surah.ayahs.length; i++) {
+            if (results.length >= MAX_RESULTS) break;
+            if (matchFn(surah.ayahs[i])) {
+              results.push({
+                surahNum: surah.id,
+                surahName: SURAH_NAMES[surah.id - 1] || surah.name,
+                ayahNum: i + 1,
+                text: surah.ayahs[i],
+                source: 'online',
+              });
+            }
+          }
+        }
+        return results;
+      }
+
+      // Pass 1: exact
+      let results = _scan(t => normalizeArabic(t).includes(normQuery));
+
+      // Pass 2: loose — only if exact found nothing
+      if (!results.length) {
+        const looseQuery = _looseNorm(query);
+        if (looseQuery) {
+          results = _scan(t => normalizeArabic(t).replace(_RE_ALEF_STRIP, '').includes(looseQuery));
+        }
+      }
+      return results;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  MERGE  (deduplicate by surahNum + ayahNum)
+    // ══════════════════════════════════════════════════════
+    function mergeResults(offline, online) {
+      const seen = new Set(offline.map(r => `${r.surahNum}:${r.ayahNum}`));
+      const newOnline = online.filter(r => !seen.has(`${r.surahNum}:${r.ayahNum}`));
+      return [...offline, ...newOnline].slice(0, MAX_RESULTS);
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  RENDER
+    // ══════════════════════════════════════════════════════
+    const resultsContainer = document.getElementById('resultsContainer');
+    const statusBar = document.getElementById('statusBar');
+
+    function _toArabicNums(n) {
+      return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+    }
+
+    function _buildCard(result, query) {
+      const a = document.createElement('a');
+      a.className = 'result-card';
+      a.href = `index.html?surah=${result.surahNum}&ayah=${result.ayahNum}&q=${encodeURIComponent(query)}`;
+
+      const srcLabel = result.source === 'offline' ? '💾 محفوظ' : '📶 إنترنت';
+
+      a.innerHTML = `
+    <div class="result-ayah-text">${highlightText(result.text, query)}</div>
+    <div class="result-meta">
+      <span class="result-surah-name">سورة ${result.surahName}</span>
+      <span class="result-ayah-num">الآية ${_toArabicNums(result.ayahNum)}</span>
+      <span class="result-source">${srcLabel}</span>
+    </div>`;
+      return a;
+    }
+
+    function renderResults(results, query) {
+      resultsContainer.innerHTML = '';
+      if (!results.length) {
+        resultsContainer.innerHTML = `
+      <div class="center-state">
+        <div class="icon">🔎</div>
+        <div class="title" style="font-size:1.6rem">لا توجد نتائج</div>
+        <div class="sub">لا توجد نتائج مطابقة لبحثك عن "${_escHtml(query)}"</div>
+      </div>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      results.forEach(r => frag.appendChild(_buildCard(r, query)));
+      resultsContainer.appendChild(frag);
+    }
+
+    function appendOnlineResults(newCards, query) {
+      if (!newCards.length) return;
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = `📶 نتائج إضافية من الإنترنت (${_toArabicNums(newCards.length)})`;
+      resultsContainer.appendChild(label);
+      const frag = document.createDocumentFragment();
+      newCards.forEach(r => frag.appendChild(_buildCard(r, query)));
+      resultsContainer.appendChild(frag);
+    }
+
+    function setStatus(html) { statusBar.innerHTML = html; }
+
+    // ══════════════════════════════════════════════════════
+    //  MAIN SEARCH ORCHESTRATOR
+    // ══════════════════════════════════════════════════════
+    let _debounceTimer = null;
+    let _abortCtrl = null;
+
+    async function runSearch(query) {
+      query = query.trim();
+      // Preprocess: replace dagger alif (U+0670) with normal alef
+      query = query.replace(/\u0670/g, '\u0627');
+
+      if (!query) {
+        resultsContainer.innerHTML = `
+      <div class="center-state">
+        <div class="title">﴿ وَنُنَزِّلُ مِنَ الْقُرْآنِ ﴾</div>
+        <div class="sub">ابدأ الكتابة للبحث في آيات القرآن الكريم</div>
+      </div>`;
+        setStatus('');
+        return;
+      }
+
+      if (query.length < 3) {
+        setStatus('<span>أدخل ٣ أحرف على الأقل للبحث</span>');
+        return;
+      }
+
+      // Cancel any in-flight online request
+      if (_abortCtrl) { _abortCtrl.abort(); }
+      _abortCtrl = new AbortController();
+      const signal = _abortCtrl.signal;
+
+      setStatus('<span class="spinner"></span><span>جارٍ البحث…</span>');
+
+      // ── Phase 1: Offline (instant) ──
+      const offlineResults = await searchOffline(query);
+      renderResults(offlineResults, query);
+
+      const countLabel = offlineResults.length
+        ? `<span class="status-count">${_toArabicNums(offlineResults.length)}</span> نتيجة من الذاكرة`
+        : 'لم يُعثر على نتائج محلية';
+      setStatus(`<span class="spinner"></span><span>${countLabel} — جارٍ تحميل البيانات…</span>`);
+
+      // ── Phase 2: Online (parallel, non-blocking) ──
+      try {
+        const onlineResults = await searchOnline(query, signal);
+        if (signal.aborted) return;
+
+        const merged = mergeResults(offlineResults, onlineResults);
+        const newOnline = merged.slice(offlineResults.length); // truly new cards
+
+        if (newOnline.length) appendOnlineResults(newOnline, query);
+
+        const total = merged.length;
+        setStatus(total
+          ? `<span class="status-count">${_toArabicNums(total)}</span> نتيجة`
+          : 'لا توجد نتائج مطابقة');
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user typed something new
+        setStatus(offlineResults.length
+          ? `<span class="status-count">${_toArabicNums(offlineResults.length)}</span> نتيجة (الإنترنت غير متاح)`
+          : 'الإنترنت غير متاح ولا توجد نتائج محلية');
+      }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  INPUT WIRING  (debounced)
+    // ══════════════════════════════════════════════════════
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      clearTimeout(_debounceTimer);
+      _debounceTimer = setTimeout(() => runSearch(e.target.value), DEBOUNCE_MS);
+    });
+
+    // Auto-focus on load
+    document.getElementById('searchInput').focus();
+
+    // ══════════════════════════════════════════════════════
+    //  SIDEBAR HELPERS  (shared pattern with other sub-pages)
+    // ══════════════════════════════════════════════════════
+    function toggleNavSidebar() {
+      document.getElementById('navSidebar').classList.toggle('show');
+      document.getElementById('navSidebarOverlay').classList.toggle('show');
+    }
+    function toggleDhikrPopupSetting(cb) {
+      localStorage.setItem('tasmi3_dhikr_popup_enabled', String(cb.checked));
+    }
+
+    // Theme
+    if (localStorage.getItem('tasmi3_theme') === 'light') {
+      document.body.classList.add('theme-light');
+    }
+    // Dhikr toggle sync
+    document.addEventListener('DOMContentLoaded', () => {
+      const cb = document.getElementById('toggleDhikrPopup');
+      if (cb) {
+        const saved = localStorage.getItem('tasmi3_dhikr_popup_enabled');
+        cb.checked = saved === null ? true : saved === 'true';
+      }
+    });
+
+    // SW
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+
+</html>
