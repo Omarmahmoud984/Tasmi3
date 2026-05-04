@@ -292,9 +292,8 @@
   <header class="search-header">
     <button class="btn-nav-toggle" onclick="toggleNavSidebar()">☰</button>
     <div class="search-input-wrap">
-      <input type="search" id="searchInput" placeholder="ابحث في القرآن الكريم..." autocomplete="off" autocorrect="off"
-        spellcheck="false" dir="rtl">
-      <span class="search-icon">🔍</span>
+      <input type="search" id="searchInput" placeholder="ابحث في القرآن الكريم..." autocomplete="off" autocorrect="off" spellcheck="false" dir="rtl">
+      <button id="searchBtn" class="search-icon" style="background:none; border:none; cursor:pointer; padding:0 10px; font-size:1.1rem;">🔍</button>
     </div>
   </header>
 
@@ -797,11 +796,25 @@
     }
 
     // ══════════════════════════════════════════════════════
-    //  INPUT WIRING  (debounced)
+    //  INPUT WIRING  (Enter key or Search button)
     // ══════════════════════════════════════════════════════
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      clearTimeout(_debounceTimer);
-      _debounceTimer = setTimeout(() => runSearch(e.target.value), DEBOUNCE_MS);
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+
+    function handleExplicitSearch() {
+      if (_abortCtrl) { _abortCtrl.abort(); } // Cancel previous if user spams
+      runSearch(searchInput.value);
+    }
+
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleExplicitSearch();
+      }
+    });
+
+    searchBtn.addEventListener('click', () => {
+      handleExplicitSearch();
     });
 
     // Auto-focus on load
