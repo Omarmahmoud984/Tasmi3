@@ -1,6 +1,8 @@
-const CACHE_NAME = 'tasmi3-v44-cache';
+const CACHE_NAME = 'tasmi3-v46-cache';
 const urlsToCache = [
   './index.html',
+  './search.html',
+  './tasbeeh.html',
   './needs_review.html',
   './good.html',
   './perfect.html',
@@ -12,6 +14,7 @@ const urlsToCache = [
   './adhkar.js',
   './adhkar_data.js',
   './manifest.json',
+  './icon.svg',
   'https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap'
 ];
 
@@ -41,22 +44,23 @@ self.addEventListener('fetch', event => {
   if (event.request.url.endsWith('.mp3')) return;
   if (event.request.url.includes('api.alquran.cloud') || event.request.url.includes('api.quran.com')) return;
 
-  // NETWORK-FIRST STRATEGY:
-  // Always try network first so users always get the latest code.
-  // Only fall back to cache when offline.
+  // CACHE-FIRST STRATEGY:
+  // Try to find the matching request in the cache.
+  // ignoreSearch prevents query params (?surah=X) from failing the cache match for index.html
   event.respondWith(
-    fetch(event.request)
-      .then(networkResponse => {
-        // Clone and cache the fresh response
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    caches.match(event.request, { ignoreSearch: true })
+      .then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Network failed — serve from cache (offline fallback)
-        return caches.match(event.request);
+        // If not in cache, fetch from network
+        return fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        });
       })
   );
 });
