@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Mushaf - تسميع</title>
+  
+  <script>
+    (function () {
+      var theme = localStorage.getItem('tasmi3_theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('theme-dark-early', 'theme-dark');
+      } else {
+        document.documentElement.classList.add('theme-light-early', 'theme-light');
+      }
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mos7af.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="mos7af-body">
+
+  <!-- Header -->
+  <div class="mos7af-header">
+     <button class="btn-back" onclick="window.location.href='index.html'">الرئيسية ➔</button>
+     <div class="mos7af-title">المصحف الشريف</div>
+     <button class="btn-settings" onclick="toggleSidebar()">⚙️</button>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="mos7afSidebarOverlay" onclick="toggleSidebar()"></div>
+  
+  <!-- Settings & Nav Sidebar -->
+  <div class="sidebar" id="mos7afSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+       <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">الإعدادات</h2>
+       <button class="btn-close-sidebar" onclick="toggleSidebar()" style="position:static;">✕</button>
+    </div>
+    
+    <div class="settings-group">
+      <h3>حجم الخط</h3>
+      <div class="font-size-controls">
+         <button onclick="setFontSize('small')" id="fontBtn_small">صغير</button>
+         <button onclick="setFontSize('default')" id="fontBtn_default" class="active">عادي</button>
+         <button onclick="setFontSize('large')" id="fontBtn_large">كبير</button>
+         <button onclick="setFontSize('xlarge')" id="fontBtn_xlarge">أكبر</button>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>المظهر</h3>
+      <div class="nav-toggle-row" style="background:var(--card-bg);padding:10px 14px;border-radius:10px;">
+        <span id="themeLabel">الوضع الليلي 🌙</span>
+        <input type="checkbox" id="toggleTheme" onchange="toggleMos7afTheme(this.checked)">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>وضع القراءة</h3>
+      <div class="mode-controls">
+         <button onclick="setMode('page')" id="modeBtn_page" class="active">صفحة</button>
+         <button onclick="setMode('surah')" id="modeBtn_surah">سورة</button>
+         <button onclick="setMode('juz')" id="modeBtn_juz">جزء</button>
+         <button onclick="setMode('rub')" id="modeBtn_rub">ربع</button>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">الرئيسية</a>
+        <a href="tasbeeh.html" class="nav-link">السبحة 📿</a>
+        <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reading Content -->
+  <div class="mos7af-container mode-page" id="mos7afContainer">
+     <!-- Injected via JS -->
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="mos7af-loading" id="mos7afLoading" style="display:none;">
+     <div class="spinner"></div>
+     <div>جاري التحميل...</div>
+  </div>
+
+
+  <!-- Bottom Navigation Bar — always visible, 3 columns -->
+  <div class="mos7af-nav">
+    <button id="btnNext" onclick="goNext()">التالي ➔</button>
+    <button class="nav-position-btn" id="positionBtn" onclick="openJumpModal()">
+      <span id="indicatorText">الصفحة 1</span>
+      <span class="nav-pos-arrow">⬆</span>
+    </button>
+    <button id="btnPrev" onclick="goPrev()" disabled>⬅ السابق</button>
+  </div>
+
+
+  <script src="quran_mapping.js"></script>
+  <script src="mos7af.js"></script>
+
+  <!-- Jump To Modal -->
+  <div class="jump-modal-overlay" id="jumpModalOverlay" onclick="closeJumpModal()" style="display:none;">
+    <div class="jump-modal" onclick="event.stopPropagation()">
+      <div class="jump-modal-header">
+        <span id="jumpModalTitle">انتقل إلى...</span>
+        <button onclick="closeJumpModal()">✕</button>
+      </div>
+      <div class="jump-modal-body" id="jumpModalBody">
+        <!-- Filled dynamically by JS -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>
