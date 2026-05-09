@@ -558,13 +558,25 @@ async function loadSurah(id) {
     const container = document.getElementById('ayahsContainer');
     container.innerHTML = '<div style="text-align:center; color: var(--gold); font-size: 1.5rem; margin-top: 40px; animation: sajdaPulse 1.5s infinite;">جاري التحميل...</div>';
 
-    // ── Priority 1: IndexedDB (offline-downloaded surahs) ──
-    if (typeof oqGetSurahOffline === 'function') {
-      const offlineData = await oqGetSurahOffline(parseInt(id));
-      if (offlineData) {
-        SURAHS[id] = offlineData;
+    // ── Priority 1: Direct IndexedDB lookup (no dependency on offline_quran.js load timing) ──
+    // This fixes a race condition: initApi() can call loadSurah() before offline_quran.js loads,
+    // making typeof oqGetSurahOffline === 'function' false and silently skipping IDB.
+    try {
+      const _idb = await new Promise((res, rej) => {
+        const r = indexedDB.open('tasmi3_quran_offline', 1);
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej();
+      });
+      const _stored = await new Promise((res) => {
+        const tx = _idb.transaction('surahs', 'readonly');
+        const req = tx.objectStore('surahs').get(parseInt(id));
+        req.onsuccess = () => res(req.result || null);
+        req.onerror = () => res(null);
+      });
+      if (_stored && Array.isArray(_stored.ayahs) && _stored.ayahs.length > 0) {
+        SURAHS[id] = { name: _stored.name, ayahs: _stored.ayahs, sajda: _stored.sajda };
       }
-    }
+    } catch { /* IDB unavailable — fall through to localStorage/network */ }
 
     if (!SURAHS[id]) {
       // ── Priority 2: localStorage cache → Priority 3: Network ──
@@ -606,7 +618,10 @@ async function loadSurah(id) {
           sajda: sajdaIndex
         };
       } catch (err) {
-        container.innerHTML = '<div style="text-align:center; color: #ff8888; font-size: 1.2rem; margin-top: 40px;">فشل التحميل. تأكد من الاتصال بالإنترنت.</div>';
+        const _offlineMsg = !navigator.onLine
+          ? 'أنت غير متصل بالإنترنت — هذه السورة غير محفوظة محلياً.<br><small style="opacity:0.75">من القائمة (☰) اختر 📥 تنزيل القرآن أوفلاين لتنزيل المصحف كاملاً</small>'
+          : 'فشل التحميل. تأكد من الاتصال بالإنترنت.';
+        container.innerHTML = `<div style="text-align:center;color:#ff8888;font-size:1.1rem;margin-top:40px;padding:20px;line-height:2">${_offlineMsg}</div>`;
         return;
       }
     }

@@ -538,6 +538,52 @@
     }
 
     // ══════════════════════════════════════════════════════
+    //  LOCALSTORAGE SEARCH  (reads raw API responses cached by app.js)
+    //  app.js stores each fetched surah as: tasmi3_api_surah_{id}
+    //  Format: raw alquran.cloud JSON { data: { ayahs:[{text,...}] } }
+    //  This covers surahs the user browsed but never explicitly downloaded.
+    // ══════════════════════════════════════════════════════
+    function searchLocalStorage(query) {
+      const normQuery = normalizeArabic(query);
+      if (!normQuery) return [];
+      const looseQuery = _looseNorm(query);
+      const results = [];
+      for (let id = 1; id <= 114; id++) {
+        const raw = localStorage.getItem('tasmi3_api_surah_' + id);
+        if (!raw) continue;
+        try {
+          const data = JSON.parse(raw);
+          const apiAyahs = data?.data?.ayahs;
+          if (!Array.isArray(apiAyahs)) continue;
+          for (let i = 0; i < apiAyahs.length; i++) {
+            if (!apiAyahs[i]?.text) continue;
+            // Apply same Bismillah-strip logic as app.js loadSurah()
+            let text = apiAyahs[i].text;
+            if (id !== 1 && id !== 9 && i === 0) {
+              const bare = text.replace(/[\u064B-\u065F\u06D6-\u06ED\u0670\u0640\u06E1]/g, '');
+              if (bare.startsWith('\u0628\u0633\u0645') || bare.startsWith('\u0628\u0650\u0633')) {
+                text = text.split(/\s+/).slice(4).join(' ');
+              }
+            }
+            const normText = normalizeArabic(text);
+            const hit = normText.includes(normQuery) ||
+              (looseQuery && normText.replace(_RE_ALEF_STRIP, '').includes(looseQuery));
+            if (hit) {
+              results.push({
+                surahNum: id,
+                surahName: SURAH_NAMES[id - 1],
+                ayahNum: i + 1,
+                text,
+                source: 'offline',
+              });
+            }
+          }
+        } catch { /* skip corrupt entry */ }
+      }
+      return results;
+    }
+
+    // ══════════════════════════════════════════════════════
     //  ONLINE SEARCH  (Fetch full Quran, cache, search locally)
     //  The /search/ endpoint is unreliable (500s on short queries).
     //  Instead: fetch /quran/ar once → store in IDB → search locally.
@@ -559,7 +605,7 @@
           r.onsuccess = () => res(r.result);
           r.onerror = () => res(0);
         });
-        if (count >= 114) {
+        if (count >= 114 || !navigator.onLine) {  // use IDB if offline even for partial downloads
           // Load all into memory
           const all = await new Promise((res) => {
             const arr = [];
@@ -628,9 +674,9 @@
       if (!normQuery) return [];
 
       let allSurahs;
-      try {
-        allSurahs = await _ensureFullQuran(signal);
-      } catch { return []; }
+      // Network errors propagate intentionally to runSearch's catch block
+      // so the proper Arabic offline message is displayed.
+      allSurahs = await _ensureFullQuran(signal);
 
       function _scan(matchFn) {
         const results = [];
@@ -764,8 +810,12 @@
 
       setStatus('<span class="spinner"></span><span>جارٍ البحث…</span>');
 
-      // ── Phase 1: Offline (instant) ──
-      const offlineResults = await searchOffline(query);
+      // ── Phase 1: Offline (instant) — IDB + localStorage ──
+      const [idbResults, lsResults] = await Promise.all([
+        searchOffline(query),
+        Promise.resolve(searchLocalStorage(query)),
+      ]);
+      const offlineResults = mergeResults(idbResults, lsResults);
       renderResults(offlineResults, query);
 
       const countLabel = offlineResults.length
@@ -791,7 +841,7 @@
         if (err.name === 'AbortError') return; // user typed something new
         setStatus(offlineResults.length
           ? `<span class="status-count">${_toArabicNums(offlineResults.length)}</span> نتيجة (الإنترنت غير متاح)`
-          : 'الإنترنت غير متاح ولا توجد نتائج محلية');
+          : 'هذه البيانات غير متاحة بدون إنترنت — حمّل القرآن الكريم أولاً من قائمة التنقل');
       }
     }
 
