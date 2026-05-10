@@ -10,6 +10,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     /* Specific styles for Adhkar page to keep main css clean */
     .adhkar-container {
@@ -200,6 +201,41 @@
       transform: scale(1);
       box-shadow: 0 4px 18px rgba(42, 180, 100, 0.12);
     }
+    .adhkar-download-wrap {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .adhkar-download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 10px 32px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .adhkar-download-btn:hover {
+      background: rgba(212,168,83,0.28);
+      border-color: var(--gold);
+      transform: scale(1.04);
+      box-shadow: 0 4px 18px rgba(212,168,83,0.18);
+    }
+
+    .adhkar-download-btn:active { transform: scale(0.96); }
+
+    .adhkar-download-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
   </style>
 </head>
 
@@ -290,6 +326,18 @@
     renderList = function (category) {
       _origRender(category);
       const list = document.getElementById('adhkarList');
+
+      // ── Download button (top) ──
+      const dlWrap = document.createElement('div');
+      dlWrap.className = 'adhkar-download-wrap';
+      dlWrap.innerHTML = `
+        <button class="adhkar-download-btn" id="btnDownloadImg"
+          onclick="exportSectionImage('${category}')">
+          📥 تحميل الصورة
+        </button>`;
+      list.insertBefore(dlWrap, list.firstChild);
+
+      // ── Share card (bottom) ──
       const card = document.createElement('div');
       card.className = 'adhkar-share-card';
       card.innerHTML = `
@@ -300,6 +348,9 @@
       `;
       list.appendChild(card);
     };
+
+    // Re-render immediately so the initial view also gets the download button
+    renderList(currentCategory);
 
     // ── 3. Share function ──
     function shareAdhkar() {

@@ -17,7 +17,7 @@ function initAdhkar() {
   } else {
     setAdhkarTheme('light');
   }
-  
+
   // Initialize state based on ADHIKAR_DB
   resetState();
   renderList(currentCategory);
@@ -25,7 +25,7 @@ function initAdhkar() {
 
 function resetState() {
   dhikrState = {};
-  for(let cat in ADHIKAR_DB) {
+  for (let cat in ADHIKAR_DB) {
     dhikrState[cat] = {};
     ADHIKAR_DB[cat].forEach(d => {
       dhikrState[cat][d.id] = d.count;
@@ -68,7 +68,7 @@ function switchAdhkarTab(category, btnElement) {
   const tabs = document.querySelectorAll('.tabs-header .tab-btn');
   tabs.forEach(t => t.classList.remove('active'));
   btnElement.classList.add('active');
-  
+
   currentCategory = category;
   renderList(category);
 }
@@ -76,14 +76,14 @@ function switchAdhkarTab(category, btnElement) {
 function renderList(category) {
   const container = document.getElementById('adhkarList');
   container.innerHTML = '';
-  
+
   const list = ADHIKAR_DB[category];
-  if(!list) return;
+  if (!list) return;
 
   list.forEach(item => {
     let isFinished = false;
     let cardHtml = '';
-    
+
     if (item.subDhikrs) {
       let anyLeft = false;
       let subHtml = '<div class="sub-dhikr-container show" id="subc-' + item.id + '">';
@@ -91,7 +91,7 @@ function renderList(category) {
         const subCount = dhikrState[category][sub.id];
         const subFin = subCount <= 0;
         if (!subFin) anyLeft = true;
-        
+
         subHtml += `
           <div class="sub-dhikr-item">
             <span class="sub-dhikr-text">${sub.text}</span>
@@ -103,7 +103,7 @@ function renderList(category) {
       });
       subHtml += '</div>';
       isFinished = !anyLeft;
-      
+
       cardHtml = `
         <div class="dhikr-text">${item.text}</div>
         <div class="dhikr-controls">
@@ -115,7 +115,7 @@ function renderList(category) {
     } else {
       const currentCount = dhikrState[category][item.id];
       isFinished = currentCount <= 0;
-      
+
       cardHtml = `
         <div class="dhikr-text">${item.text}</div>
         <div class="dhikr-controls">
@@ -126,26 +126,26 @@ function renderList(category) {
         </div>
       `;
     }
-    
+
     const card = document.createElement('div');
     card.className = `dhikr-card ${isFinished ? 'completed' : ''}`;
     card.id = `card-${item.id}`;
     card.innerHTML = cardHtml;
-    
+
     container.appendChild(card);
   });
 }
 
 function decrementCount(dhikrId) {
   const currentCount = dhikrState[currentCategory][dhikrId];
-  if(currentCount <= 0) return; // already done
+  if (currentCount <= 0) return; // already done
 
   const newCount = currentCount - 1;
   dhikrState[currentCategory][dhikrId] = newCount;
-  
+
   const circle = document.getElementById(`count-${dhikrId}`);
   const card = document.getElementById(`card-${dhikrId}`);
-  
+
   // Animation effect
   circle.style.transform = 'scale(0.85)';
   setTimeout(() => circle.style.transform = '', 150);
@@ -174,13 +174,13 @@ function toggleSubDhikr(parentId) {
 
 function decrementSubCount(parentId, subId) {
   const currentCount = dhikrState[currentCategory][subId];
-  if(currentCount <= 0) return; // already done
+  if (currentCount <= 0) return; // already done
 
   const newCount = currentCount - 1;
   dhikrState[currentCategory][subId] = newCount;
-  
+
   const circle = document.getElementById(`count-${subId}`);
-  
+
   // Animation effect
   circle.style.transform = 'scale(0.85)';
   setTimeout(() => circle.style.transform = '', 150);
@@ -197,12 +197,12 @@ function decrementSubCount(parentId, subId) {
 function checkParentCompletion(parentId) {
   const item = ADHIKAR_DB[currentCategory].find(d => d.id === parentId);
   if (!item || !item.subDhikrs) return;
-  
+
   let anyLeft = false;
   item.subDhikrs.forEach(sub => {
     if (dhikrState[currentCategory][sub.id] > 0) anyLeft = true;
   });
-  
+
   if (!anyLeft) {
     const card = document.getElementById(`card-${parentId}`);
     card.classList.add('completed');
@@ -212,11 +212,11 @@ function checkParentCompletion(parentId) {
 
 function openDhikrModal(dhikrId) {
   const item = ADHIKAR_DB[currentCategory].find(d => d.id === dhikrId);
-  if(!item) return;
+  if (!item) return;
 
   document.getElementById('dhikrRef').textContent = item.ref;
   document.getElementById('dhikrFadhilah').textContent = item.fadhilah;
-  
+
   const modal = document.getElementById('dhikrInfoModal');
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -345,3 +345,281 @@ document.addEventListener('DOMContentLoaded', () => {
     popCheck.checked = saved === null ? true : saved === 'true';
   }
 });
+
+// ══════════════════════════════════════════════════════
+//  IMAGE EXPORT — تحميل الصورة
+// ══════════════════════════════════════════════════════
+
+const SECTION_THEMES = {
+  morning: {
+    gradient: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+    accent: '#f2a65a',
+    accentDim: 'rgba(242, 166, 90, 0.15)',
+    borderColor: 'rgba(242, 166, 90, 0.3)',
+    emoji: '🌅',
+    title: 'أذكار الصباح'
+  },
+  evening: {
+    gradient: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+    accent: '#e0c3fc',
+    accentDim: 'rgba(224, 195, 252, 0.15)',
+    borderColor: 'rgba(224, 195, 252, 0.3)',
+    emoji: '🌙',
+    title: 'أذكار المساء'
+  },
+  sleep: {
+    gradient: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+    accent: '#b47ff5',
+    accentDim: 'rgba(180,127,245,0.15)',
+    borderColor: 'rgba(180,127,245,0.3)',
+    emoji: '😴',
+    title: 'أذكار النوم'
+  },
+  after_prayer: {
+    gradient: 'linear-gradient(135deg, #3e2e1e 0%, #2e1e0f 100%)',
+    accent: '#d4a853',
+    accentDim: 'rgba(212,168,83,0.15)',
+    borderColor: 'rgba(212,168,83,0.3)',
+    emoji: '🕌',
+    title: 'أذكار بعد الصلاة'
+  }
+};
+
+function formatAdhkarCount(n) {
+  const toAr = s => String(s).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+  if (n === 1) return 'مرة واحدة';
+  if (n === 2) return 'مرتان';
+  if (n <= 10) return `${toAr(n)} مرات`;
+  return `${toAr(n)} مرة`;
+}
+
+function buildItemCard(text, count, theme, config) {
+  const badge = formatAdhkarCount(count);
+  const safeText = text.replace(/\n/g, '<br>');
+  return `
+    <div style="
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: ${config.cardPadding}px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    ">
+      <div style="
+        color: rgba(255,255,255,0.9);
+        font-size: ${config.fontSize}px;
+        line-height: 1.6;
+        font-family: 'Scheherazade New', serif;
+        margin-bottom: 8px;
+      ">${safeText}</div>
+      <div style="text-align: left;">
+        <span style="
+          color: ${theme.accent};
+          font-size: ${config.badgeSize}px;
+          font-weight: 700;
+          font-family: 'Cairo', sans-serif;
+          opacity: 0.9;
+        ">✦ ${badge}</span>
+      </div>
+    </div>`;
+}
+
+function buildGroupLabel(text, theme, config) {
+  const safeText = text.replace(/\n/g, ' ');
+  return `
+    <div style="
+      width: 100%;
+      color:${theme.accent};
+      font-size:${config.titleSize}px;
+      font-weight:900;
+      padding:4px 0;
+      font-family:'Cairo',sans-serif;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      text-align: right;
+    ">${safeText}</div>`;
+}
+
+async function exportSectionImage(category) {
+  if (typeof html2canvas === 'undefined') {
+    alert('يتطلب اتصالاً بالإنترنت لتحميل الصورة أول مرة');
+    return;
+  }
+
+  const btn = document.getElementById('btnDownloadImg');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ جاري التحميل...'; }
+
+  const theme = SECTION_THEMES[category] || SECTION_THEMES.morning;
+  const items = ADHIKAR_DB[category] || [];
+
+  let totalCards = 0;
+  items.forEach(item => {
+    totalCards += item.subDhikrs ? item.subDhikrs.length : 1;
+  });
+
+  // Adaptive Grid Configuration (Decreased sizes by ~15% to ensure everything fits)
+  let config = {};
+  if (totalCards <= 8) {
+    config = { cols: 2, fontSize: 27, cardPadding: 24, badgeSize: 18, titleSize: 26 };
+  } else if (totalCards <= 14) {
+    config = { cols: 2, fontSize: 22, cardPadding: 18, badgeSize: 14, titleSize: 22 };
+  } else if (totalCards <= 22) { // Perfect for Morning/Evening (~21 cards)
+    config = { cols: 3, fontSize: 19, cardPadding: 16, badgeSize: 13, titleSize: 20 };
+  } else if (totalCards <= 32) {
+    config = { cols: 4, fontSize: 15, cardPadding: 12, badgeSize: 12, titleSize: 18 };
+  } else {
+    config = { cols: 5, fontSize: 14, cardPadding: 10, badgeSize: 11, titleSize: 16 };
+  }
+
+  // Column-based manual distribution to preserve groups while balancing columns
+  const targetCardsPerCol = totalCards / config.cols;
+  const columnsData = Array.from({ length: config.cols }, () => []);
+  let currentCol = 0;
+  let currentCardsInCol = 0;
+
+  items.forEach(item => {
+    let groupCards = [];
+    let groupCardCount = 0;
+
+    if (item.subDhikrs && item.subDhikrs.length) {
+      groupCards.push(buildGroupLabel(item.text, theme, config));
+      item.subDhikrs.forEach(sub => {
+        groupCards.push(buildItemCard(sub.text, sub.count, theme, config));
+        groupCardCount++;
+      });
+    } else {
+      groupCards.push(buildItemCard(item.text, item.count, theme, config));
+      groupCardCount++;
+    }
+
+    // Balance columns more aggressively
+    if (currentCardsInCol > 0 && currentCardsInCol + (groupCardCount * 0.7) > targetCardsPerCol && currentCol < config.cols - 1) {
+      currentCol++;
+      currentCardsInCol = 0;
+    }
+
+    columnsData[currentCol].push(...groupCards);
+    currentCardsInCol += groupCardCount;
+  });
+
+  const gap = config.cols >= 4 ? 12 : 24;
+  let columnsHtml = '';
+  columnsData.forEach(colItems => {
+    columnsHtml += `
+      <div style="flex: 1; display: flex; flex-direction: column; gap: ${gap}px;">
+        ${colItems.join('')}
+      </div>
+    `;
+  });
+
+  // Build hidden export container (1080P Fixed, NO truncation)
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `
+    position:fixed; left:-9999px; top:0;
+    width:1080px; height:1920px;
+    font-family:'Cairo',sans-serif;
+    direction:rtl;
+    background:${theme.gradient};
+    padding:40px 40px;
+    box-sizing:border-box;
+    display:flex; flex-direction:column;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  `;
+
+  wrap.innerHTML = `
+    <!-- HEADER -->
+    <div style="text-align:center; margin-bottom:20px; flex-shrink:0;">
+      <div style="font-size:60px; margin-bottom:0px;">${theme.emoji}</div>
+      <div style="
+        color:${theme.accent};
+        font-size:42px;
+        font-weight:900;
+        font-family:'Cairo',sans-serif;
+      ">${theme.title}</div>
+      <div style="width:150px; height:3px; background:${theme.accent}; margin:10px auto 0; opacity:0.5; border-radius:3px;"></div>
+    </div>
+
+    <!-- DHIKR ITEMS (Vertical Column Flow) -->
+    <div style="
+      display: flex; 
+      gap: ${gap}px;
+      flex: 1;
+      overflow: hidden;
+    ">
+      ${columnsHtml}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="flex-shrink:0; margin-top:20px;">
+      <div style="
+        text-align:center;
+        padding-top:20px;
+        border-top:1px solid rgba(255,255,255,0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+      ">
+        <span style="color:${theme.accent}; font-size:28px; font-weight:900; font-family:'Cairo',sans-serif; letter-spacing:1px;">Tasmi3</span>
+        <span style="color:rgba(255,255,255,0.2); font-size:20px;">|</span>
+        <span style="color:rgba(255,255,255,0.5); font-size:18px; font-family:'Cairo',sans-serif;">tasmi3.vercel.app.com</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  try {
+    const canvas = await html2canvas(wrap, {
+      scale: 3, // Increased from 2 for Ultra HD sharpness when zooming
+      useCORS: true,
+      backgroundColor: null,
+      logging: false
+    });
+
+    // Use toBlob for binary file
+    await new Promise((resolve, reject) => {
+      canvas.toBlob(async blob => {
+        if (!blob) { reject(new Error('toBlob failed')); return; }
+
+        const fileName = `adhkar-${category}.png`;
+
+        // ── Best on Windows Desktop: File System Access API ──
+        if ('showSaveFilePicker' in window) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: fileName,
+              types: [{ description: 'PNG Image', accept: { 'image/png': ['.png'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            resolve();
+            return; // Success, skip fallback
+          } catch (err) {
+            // User cancelled or API failed, fall through to fallback
+            if (err.name === 'AbortError') { resolve(); return; } 
+          }
+        }
+
+        // ── Fallback for Mobile/Older browsers ──
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        resolve();
+      }, 'image/png');
+    });
+  } catch (err) {
+    console.error('[Export]', err);
+    alert('فشل تحميل الصورة، حاول مجدداً');
+  }
+
+  document.body.removeChild(wrap);
+  if (btn) { btn.disabled = false; btn.innerHTML = '📥 تحميل الصورة'; }
+}
+
