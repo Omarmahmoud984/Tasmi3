@@ -334,8 +334,9 @@ body.mos7af-body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh; /* mobile: excludes browser chrome */
+  height: 100vh;
+  height: 100dvh; /* modern browsers: excludes mobile address bar */
+  overflow: hidden;
   background-color: var(--bg);
   color: var(--text);
   font-family: 'Scheherazade New', serif;
