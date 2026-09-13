@@ -32,19 +32,25 @@ html.theme-dark-early {
   --bg2: #0d1117;
   --bg3: #111820;
   --surface: rgba(255, 255, 255, 0.04);
-  --gold: #d4a853;
-  --gold2: #f0c97a;
-  --gold-dim: rgba(212, 168, 83, 0.18);
-  --gold-line: rgba(212, 168, 83, 0.22);
+  --surface-paper: transparent;
+  --gold: #C49A3B;
+  --gold2: #e0b96a;
+  --gold-dim: rgba(196, 154, 59, 0.18);
+  --gold-line: rgba(196, 154, 59, 0.22);
   --text: #e8e0d0;
   --text2: #a09880;
   --text3: #5a5448;
   --green: #1e4d38;
   --green2: #2a6b4f;
-  --blue: #1a3a5c;
+  --blue: #1a3858;
   --blue2: #4a90d9;
   --radius: 14px;
+  --radius-paper: 0;
+  --radius-frame: 12px;
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
 
   --header-bg: rgba(8, 11, 14, 0.92);
   --bottom-bg: rgba(8, 11, 14, 0.97);
@@ -150,6 +156,8 @@ header {
   flex-shrink: 0;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .btn-nav:hover {
@@ -407,7 +415,7 @@ header.collapsed .btn-header-toggle {
   flex-direction: column;
   align-items: center;
   padding: 28px 16px 130px;
-  max-width: 820px;
+  max-width: 68ch;
   margin: 0 auto;
   width: 100%;
 }
@@ -421,27 +429,32 @@ header.collapsed .btn-header-toggle {
   font-feature-settings: "calt" 1, "liga" 1;
   opacity: 0;
   animation: fadeIn 1.2s ease 0.4s forwards;
-  text-shadow: 0 0 40px rgba(212, 168, 83, 0.2);
+  text-shadow: 0 0 40px rgba(196, 154, 59, 0.2);
 }
 
-/* ═══ AYAH BLOCK ═══ */
+/* ═══ AYAH BLOCK — ruled paper (quiet, not card) ═══ */
 .ayah-block {
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   opacity: 0;
   transform: translateY(10px);
   animation: slideIn 0.5s ease forwards;
-  border-radius: var(--radius);
+  border-radius: var(--radius-paper);
   padding: 20px 18px 16px;
-  background: var(--surface);
-  border: 1px solid var(--gold-dim);
+  background: var(--surface-paper);
+  border: none;
+  border-top: 1px solid var(--gold-line);
+  border-bottom: 1px solid var(--gold-dim);
+  contain: layout;
+  min-height: 88px;
   transition: border-color 0.3s, background 0.3s;
   scroll-margin-top: 130px;
 }
 
 .ayah-block:hover {
-  border-color: var(--gold-line);
-  background: rgba(212, 168, 83, 0.03);
+  border-top-color: var(--gold);
+  border-bottom-color: var(--gold-line);
+  background: var(--surface-paper);
 }
 
 .ayah-number {
@@ -573,21 +586,19 @@ header.collapsed .btn-header-toggle {
 
 
 
-/* ═══ BOTTOM BAR ═══ */
+/* ═══ BOTTOM BAR — 44px touch, 8px gap (a11y) ═══ */
 .bottom-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background: var(--bottom-bg);
-
-
   border-top: 1px solid var(--gold-line);
   padding: 8px 12px;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: transform;
   transform: translateY(0);
@@ -636,7 +647,7 @@ header.collapsed .btn-header-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* Row 2: n-words group (full width center) */
@@ -644,7 +655,7 @@ header.collapsed .btn-header-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .stats-group {
@@ -711,6 +722,8 @@ header.collapsed .btn-header-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .theme-light .step-btn {
@@ -727,7 +740,7 @@ header.collapsed .btn-header-toggle {
 }
 
 .btn-reveal-n {
-  background: linear-gradient(135deg, #1a3a5c 0%, #0e2240 100%);
+  background: linear-gradient(135deg, #1a3858 0%, #0e2240 100%);
   border: none;
   border-right: 1px solid rgba(74, 144, 217, 0.2);
   border-left: 1px solid rgba(74, 144, 217, 0.2);
@@ -739,6 +752,7 @@ header.collapsed .btn-header-toggle {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .theme-light .btn-reveal-n {
@@ -767,6 +781,8 @@ header.collapsed .btn-header-toggle {
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .btn-reset:hover {
@@ -779,7 +795,7 @@ header.collapsed .btn-header-toggle {
 }
 
 .btn-reveal-ayah {
-  background: linear-gradient(135deg, #1a3a5c 0%, #0e2240 100%);
+  background: linear-gradient(135deg, #1a3858 0%, #0e2240 100%);
   border: 1px solid rgba(74, 144, 217, 0.3);
   color: #7ab8ff;
   padding: 8px 13px;
@@ -791,6 +807,7 @@ header.collapsed .btn-header-toggle {
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .btn-reveal-ayah:hover {
@@ -804,7 +821,7 @@ header.collapsed .btn-header-toggle {
 
 .btn-reveal-all {
   background: linear-gradient(135deg, #1e4d38 0%, #152e22 100%);
-  border: 1px solid rgba(212, 168, 83, 0.25);
+  border: 1px solid rgba(196, 154, 59, 0.25);
   color: var(--gold);
   padding: 8px 13px;
   border-radius: 10px;
@@ -815,6 +832,7 @@ header.collapsed .btn-header-toggle {
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .btn-reveal-all:hover {
@@ -1029,10 +1047,9 @@ header.collapsed .btn-header-toggle {
 }
 
 .next-surah-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text3);
-  letter-spacing: 3px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .next-surah-name {
@@ -1493,11 +1510,22 @@ header.collapsed .btn-header-toggle {
 }
 
 .custom-option {
-  padding: 8px 12px;
+  padding: 10px 12px;
   cursor: pointer;
   color: var(--text2);
-  font-size: 0.85rem;
-  transition: background 0.15s, color 0.15s;
+  font-size: 0.88rem;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+  border-radius: 8px;
+  margin: 2px 6px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  outline: none;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
 }
 
 .custom-option:hover {
@@ -1505,9 +1533,28 @@ header.collapsed .btn-header-toggle {
   color: var(--gold);
 }
 
+.custom-option:active { transform: scale(0.985); }
+.custom-option:focus, .custom-option:focus-visible { outline: none; box-shadow: none; }
+
+.custom-option.active {
+  background: var(--gold);
+  color: #111;
+  font-weight: 700;
+  border: 1px solid var(--gold);
+  box-shadow: 0 2px 8px rgba(196,154,59,0.25);
+}
+
+.custom-option.active:hover {
+  background: var(--gold);
+  color: #111;
+}
+
 .custom-option.hidden {
   display: none;
 }
+
+/* kill blue tap highlight in custom select */
+.custom-surah-wrap, .custom-surah-wrap * { -webkit-tap-highlight-color: transparent; }
 
 /* ═══ MUSHAF MODE ═══ */
 .mushaf-page {
@@ -3222,6 +3269,20 @@ body.theme-light .oq-progress-track {
 
 .about-close-btn:active {
   transform: scale(0.97);
+}
+
+/* ═══ A11Y: focus ring & reduced motion (senior frontend) ═══ */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 

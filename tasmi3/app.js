@@ -683,6 +683,10 @@ async function loadSurah(id) {
   _loadedUpTo = initialEnd;
 
   localStorage.setItem('tasmi3_last_surah', id);
+  // keep custom dropdown highlighted + header text in sync when surah loaded via any path
+  const csOpt = document.querySelector(`#surahSelect option[value="${id}"]`);
+  if (csOpt) document.getElementById('customSurahText').textContent = csOpt.text;
+  if (typeof setCustomActiveOption === 'function') setCustomActiveOption(id);
   updateStats();
 
   // Setup append-only progressive scroll loading (no jumps — we never remove from top)
@@ -722,6 +726,7 @@ function goNextSurah(id) {
   document.getElementById('surahSelect').value = id;
   const opt = document.querySelector(`#surahSelect option[value="${id}"]`);
   if (opt) document.getElementById('customSurahText').textContent = opt.text;
+  if (typeof setCustomActiveOption === 'function') setCustomActiveOption(id);
   loadSurah(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1638,9 +1643,11 @@ function initCustomSelect() {
     // Pre-cache normalized (diacritics-stripped) name so the search
     // listener never runs regex inside the keystroke loop.
     div.dataset.normalized = normalizeArabic(opt.text);
+    if (String(opt.value) === String(nativeSelect.value)) div.classList.add('active');
     div.addEventListener('click', () => {
       nativeSelect.value = opt.value;
       textSpan.textContent = opt.text;
+      setCustomActiveOption(opt.value);
       dropdown.classList.remove('show');
       loadSurah(opt.value);
     });
@@ -1653,7 +1660,10 @@ function initCustomSelect() {
     if (dropdown.classList.contains('show')) {
       search.value = '';
       search.dispatchEvent(new Event('input'));
-      search.focus();
+      // Scroll chosen surah into view inside dropdown
+      const active = optionsDiv.querySelector('.custom-option.active');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+      if (window.innerWidth > 480) search.focus();
     }
   });
 
@@ -1670,6 +1680,19 @@ function initCustomSelect() {
       else opt.classList.add('hidden');
     });
   });
+}
+
+// ── Keep chosen surah highlighted (hovered) in search bar dropdown ──
+function setCustomActiveOption(value) {
+  const optionsDiv = document.getElementById('customSurahOptions');
+  if (!optionsDiv) return;
+  Array.from(optionsDiv.children).forEach(el => {
+    el.classList.toggle('active', String(el.dataset.value) === String(value));
+  });
+  const active = optionsDiv.querySelector('.custom-option.active');
+  if (active && document.getElementById('customSurahDropdown')?.classList.contains('show')) {
+    active.scrollIntoView({ block: 'nearest' });
+  }
 }
 
 // Init
@@ -1709,11 +1732,12 @@ async function initApi() {
 
     initCustomSelect();
 
-    // Set the text wrapper
+    // Set the text wrapper + highlight it in dropdown
     const initialOpt = document.querySelector(`#surahSelect option[value="${nativeSelect.value}"]`);
     if (initialOpt) {
       document.getElementById('customSurahText').textContent = initialOpt.text;
     }
+    setCustomActiveOption(nativeSelect.value);
 
     // Overlay is removed — app always starts directly.
     if (surahParam && parseInt(surahParam) >= 1 && parseInt(surahParam) <= 114) {

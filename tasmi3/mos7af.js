@@ -275,6 +275,11 @@ function updatePositionIndicator() {
     text = `ج${juzIndex} · ر${rubInJuz}`;
   }
   indicatorText.textContent = text;
+  // Make surah pill more obvious (gold ring) when in surah mode
+  if (positionBtn) {
+    positionBtn.classList.toggle('is-surah', currentMode === 'surah');
+    positionBtn.setAttribute('aria-label', currentMode === 'surah' ? 'اختر السورة — ' + text : text);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -309,24 +314,29 @@ function openJumpModal() {
       </div>`;
     setTimeout(() => document.getElementById('pageInput').select(), 80);
 
-  // ── SURAH: Search + combo box (select) ──
+  // ── SURAH: 1-click list — search + immediate jump, no select, no blue ──
   } else if (currentMode === 'surah') {
-    title.textContent = 'اختر السورة';
-    let opts = '';
+    title.textContent = 'اختر السورة — ضغطة واحدة';
+    let listHtml = '<div class="jump-surah-list" id="surahList">';
     SURAH_NAMES.forEach((name, i) => {
-      const num      = i + 1;
-      const selected = num === currentIndex ? 'selected' : '';
-      opts += `<option value="${num}" ${selected}>${num}. ${name}</option>`;
+      const num = i + 1;
+      const active = num === currentIndex ? 'active' : '';
+      listHtml += `<div class="jump-surah-item ${active}" data-num="${num}" onclick="jumpTo(${num})"><span class="jump-surah-name">${name}</span><span class="jump-surah-num">${num}</span></div>`;
     });
+    listHtml += '</div>';
     body.innerHTML = `
       <div class="jump-surah-wrap">
-        <input class="jump-surah-search" id="surahSearchInput" placeholder="ابحث باسم السورة..." autocomplete="off" oninput="filterSurahSelect(this.value)">
-        <select class="jump-surah-select" id="surahSelect" size="6">${opts}</select>
-        <button class="jump-surah-go" onclick="jumpToSurahSelect()">انتقل ➔</button>
+        <input class="jump-surah-search" id="surahSearchInput" placeholder="ابحث باسم السورة..." autocomplete="off" oninput="filterSurahList(this.value)">
+        ${listHtml}
       </div>`;
+    // Scroll active into view + focus search on desktop only
     setTimeout(() => {
-      const sel = document.getElementById('surahSelect');
-      if (sel) sel.scrollTop = sel.querySelector('option[selected]')?.offsetTop || 0;
+      const active = document.querySelector('.jump-surah-item.active');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+      if (window.innerWidth > 480) {
+        const inp = document.getElementById('surahSearchInput');
+        if (inp) inp.focus();
+      }
     }, 60);
 
   // ── JUZ: Grid 1–30 ──
@@ -367,15 +377,17 @@ function jumpToPageInput() {
   jumpTo(val);
 }
 
-// ── Surah select helpers ──
-function filterSurahSelect(query) {
-  const sel = document.getElementById('surahSelect');
-  const q   = query.trim();
-  Array.from(sel.options).forEach(opt => {
-    opt.hidden = q ? !opt.text.includes(q) : false;
+// ── Surah 1-click helpers — no blue, instant jump ──
+function filterSurahList(query) {
+  const q = query.trim();
+  document.querySelectorAll('.jump-surah-item').forEach(el => {
+    const name = el.querySelector('.jump-surah-name')?.textContent || '';
+    const num  = el.querySelector('.jump-surah-num')?.textContent || '';
+    el.style.display = q ? (name.includes(q) || num.includes(q) ? '' : 'none') : '';
   });
 }
-
+// kept for backward compat if older HTML cached
+function filterSurahSelect(q) { filterSurahList(q); }
 function jumpToSurahSelect() {
   const sel = document.getElementById('surahSelect');
   const val = sel ? parseInt(sel.value) : null;
