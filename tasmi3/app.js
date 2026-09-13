@@ -2,8 +2,8 @@
 const SURAHS = {};
 
 // ── Tafsir cache version — bump this when switching API endpoints ──
-// v3 = reverted to /tafsirs/by_ayah/ (the correct working endpoint)
-const TAFSIR_CACHE_VERSION = 'v3';
+// v4 = الميسر only (16) — purges old 14/15/ar.miqbas caches
+const TAFSIR_CACHE_VERSION = 'v4';
 const _tafsirVersionKey = 'tasmi3_tafsir_cache_ver';
 try {
   if (localStorage.getItem(_tafsirVersionKey) !== TAFSIR_CACHE_VERSION) {
@@ -355,17 +355,12 @@ function toggleDhikrPopupSetting(checkbox) {
 
 function showDhikrPopup() {
   if (!isDhikrPopupEnabled()) {
-    // Don't show, don't reschedule
     return;
   }
 
   const popup = document.getElementById('globalDhikrPopup');
-  const overlay = document.getElementById('overlay');
 
-  // Show if overlay is hide (startApp) or none (navigated via ?surah=)
-  const isOverlayHidden = !overlay || overlay.classList.contains('hide') || overlay.style.display === 'none';
-
-  if (popup && isOverlayHidden) {
+  if (popup) {
     popup.classList.add('show');
 
     // Auto-hide after 6 seconds
@@ -374,8 +369,24 @@ function showDhikrPopup() {
       closeDhikrPopup();
     }, 6000);
   } else {
-    // If we couldn't show it (e.g. still in tutorial), simply schedule the next one
     scheduleNextDhikr();
+  }
+}
+
+// ── About Modal ──
+function openAboutModal() {
+  const modal = document.getElementById('aboutModal');
+  if (modal) {
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeAboutModal() {
+  const modal = document.getElementById('aboutModal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
   }
 }
 
@@ -482,40 +493,17 @@ function resetTasbeeh() {
   document.getElementById('tasbeehCircle').textContent = tasbeehCount;
 }
 
-async function startApp() {
-  const btn = document.querySelector('.overlay-btn');
-
-  // Check for SW update before proceeding
-  if ('serviceWorker' in navigator && window._swReg) {
-    try {
-      if (btn) {
-        btn.textContent = 'جاري التحقّق من التحديثات...';
-        btn.disabled = true;
-      }
-
-      // Trigger a network check for a new SW
-      await window._swReg.update();
-
-      if (window._swReg.installing || window._swReg.waiting) {
-        // A new version is being installed — reload will happen automatically
-        // via the controllerchange listener. Show feedback and wait.
-        if (btn) btn.textContent = '🔄 يتم تحديث التطبيق...';
-        // Safety fallback: if reload hasn't happened in 4s, force it
-        setTimeout(() => window.location.reload(true), 4000);
-        return;
-      }
-    } catch (e) {
-      // Network unavailable — proceed offline
-    }
-  }
-
+// startApp is no longer used (overlay removed) but kept for backward compat with any links/buttons.
+function startApp() {
   _proceedStartApp();
 }
 
 function _proceedStartApp() {
   const ov = document.getElementById('overlay');
-  ov.classList.add('hide');
-  setTimeout(() => ov.style.display = 'none', 400);
+  if (ov) {
+    ov.classList.add('hide');
+    setTimeout(() => ov.style.display = 'none', 400);
+  }
 
   const urlParams = new URLSearchParams(window.location.search);
   const surahParam = urlParams.get('surah');
@@ -1727,15 +1715,12 @@ async function initApi() {
       document.getElementById('customSurahText').textContent = initialOpt.text;
     }
 
-    // If a ?surah= param is present (coming from a board/search page), skip the overlay entirely
+    // Overlay is removed — app always starts directly.
     if (surahParam && parseInt(surahParam) >= 1 && parseInt(surahParam) <= 114) {
-      const ov = document.getElementById('overlay');
-      if (ov) { ov.style.display = 'none'; }
-
+      // Coming from a board/search page with a specific ?surah= (and optionally ?ayah= and ?q=)
       const ayahParam = urlParams.get('ayah');
       const searchQuery = urlParams.get('q') ? decodeURIComponent(urlParams.get('q')) : null;
 
-      // Store globally so toggleMushafMode can re-apply highlights
       _searchHighlightQuery = searchQuery;
       _searchHighlightAyah = ayahParam ? parseInt(ayahParam) - 1 : null;
 
@@ -1747,17 +1732,10 @@ async function initApi() {
             setTimeout(() => {
               const block = document.querySelector(`.ayah-block[data-ayah-idx="${ayahIdx}"]`);
               if (block) {
-                // Permanent gold glow on the block (normal mode)
                 block.classList.add('search-glow');
                 block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Highlight the searched query inside the ayah text
-                if (searchQuery) {
-                  _applySearchHighlight(block, searchQuery);
-                }
+                if (searchQuery) _applySearchHighlight(block, searchQuery);
               }
-
-              // If mushaf mode is active, highlight in the mushaf text too
               if (isMushafMode && searchQuery) {
                 _applySearchHighlightMushaf(searchQuery, ayahIdx);
               }
@@ -1765,6 +1743,9 @@ async function initApi() {
           }
         }
       });
+    } else {
+      // Normal entry — load last surah (or surah 1) directly, no overlay gate
+      _proceedStartApp();
     }
   } catch (e) {
     console.error(e);
@@ -1782,17 +1763,10 @@ let currentTafsirContext = { surah: null, ayah: null };
 
 function openTafsirModal(surah, ayah) {
   currentTafsirContext = { surah, ayah };
-  document.getElementById('tafsirAyahNum').textContent = toArabicNum(ayah - 1); // ayahNum starts from 1, toArabicNum adds 1, passing ayah-1 yields correct arabic num
-
+  document.getElementById('tafsirAyahNum').textContent = toArabicNum(ayah - 1);
   const modal = document.getElementById('tafsirModal');
   modal.classList.add('show');
-  document.body.style.overflow = 'hidden'; // stop background scrolling
-
-  // Reset tabs to default (Al-Muyassar -> id: 16)
-  const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
-  tabs.forEach(t => t.classList.remove('active'));
-  tabs[0].classList.add('active'); // 16 is first
-
+  document.body.style.overflow = 'hidden';
   loadTafsirContent(16, surah, ayah);
 }
 
@@ -1807,38 +1781,42 @@ function closeTafsirModal(e) {
   }
 }
 
-function switchTafsirTab(tafsirId, btn) {
-  const tabs = document.querySelectorAll('#tafsirModal .tab-btn');
-  tabs.forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-
-  const { surah, ayah } = currentTafsirContext;
-  if (surah && ayah) {
-    loadTafsirContent(tafsirId, surah, ayah);
-  }
-}
+// switchTafsirTab removed — الميسر only (16) — kept as no-op for backward compat
+function switchTafsirTab() { return; }
 
 async function loadTafsirContent(tafsirId, surah, ayah) {
+  tafsirId = 16; // force الميسر only
   const container = document.getElementById('tafsirContent');
   container.innerHTML = '<div class="custom-spinner"></div>';
 
   try {
-    const apiUrl = `https://api.quran.com/api/v4/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
-    let data;
+    // 1. Check Offline Database First
+    if (typeof window.otGetTafsirOffline === 'function') {
+      const offlineData = await window.otGetTafsirOffline(tafsirId, surah, ayah);
+      if (offlineData) {
+        container.innerHTML = `<div class="tafsir-content-wrap">${offlineData.text}</div>`;
+        container.scrollTop = 0;
+        return;
+      }
+    }
 
+    // 2. Fetch Online if not available offline
+    let data;
     const cacheKey = `tasmi3_tafsir_${tafsirId}_${surah}_${ayah}`;
     let cachedTafsir = localStorage.getItem(cacheKey);
 
     if (cachedTafsir) {
       data = JSON.parse(cachedTafsir);
     } else {
+      const apiUrl = `https://api.quran.com/api/v4/tafsirs/16/by_ayah/${surah}:${ayah}`;
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error('API Error');
       data = await res.json();
       try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (e) { }
     }
 
-    let textResult = data && data.tafsir && data.tafsir.text ? data.tafsir.text : 'لا يوجد تفسير متاح لهذه الآية حالياً.';
+    let textResult = 'لا يوجد تفسير متاح لهذه الآية حالياً.';
+    if (data && data.tafsir && data.tafsir.text) textResult = data.tafsir.text;
 
     container.innerHTML = `<div class="tafsir-content-wrap">${textResult}</div>`;
     container.scrollTop = 0;

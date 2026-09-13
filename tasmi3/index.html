@@ -64,6 +64,14 @@
         <span id="oqDownloadBadge" class="oq-badge"></span>
       </button>
 
+      <!-- Offline Tafsir Download Button -->
+      <a href="download_tafsirs.html" class="nav-link" style="color: var(--gold); border: 1px dashed var(--gold); border-radius: 8px; margin-top: 5px; text-align: center; display: block;">📚 إدارة التفاسير (أوفلاين)</a>
+
+      <!-- About Button -->
+      <button class="nav-link" id="btnAbout"
+        style="display:block; text-align:right; border:1px solid rgba(212,168,83,0.4); background:transparent; color:var(--text); cursor:pointer; margin-top:4px; font-size:0.95rem; border-radius:8px;"
+        onclick="openAboutModal(); toggleNavSidebar();">ℹ️ حول التطبيق</button>
+
       <div class="nav-toggle-row">
         <span>إشعارات الصلاة على النبي ﷺ</span>
         <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
@@ -79,80 +87,110 @@
     <button class="tasbeeh-reset" onclick="resetTasbeeh()">⟲ تصفير العداد</button>
   </div>
 
-  <!-- Intro Overlay -->
-  <div class="overlay" id="overlay">
-    <div class="overlay-card">
-      <div class="overlay-title">تسميع</div>
-      <div class="overlay-subtitle">Quran Memorization</div>
-      <div class="tutorial-steps">
-        <div class="tut-step">
-          <span class="tut-icon">👆</span>
-          <span>دوس على أي كلمة عشان تظهر، الكلمة اللي تكشفها هتفضل ظاهرة</span>
+  <!-- About Modal -->
+  <div class="about-modal-overlay" id="aboutModal" onclick="if(event.target===this) closeAboutModal()">
+    <div class="about-modal-card">
+      <div class="about-modal-header">
+        <div class="about-modal-title">
+          <span class="about-logo">تسميع</span>
+          <span class="about-version">حول التطبيق</span>
         </div>
-        <div class="tut-step">
-          <span class="tut-icon">۝</span>
-          <span>دوس على علامة الآية (۝) عشان تكشف الآية كلها دفعة واحدة</span>
+        <button class="about-modal-close" onclick="closeAboutModal()">×</button>
+      </div>
+      <div class="about-modal-body">
+        <p class="about-desc">تطبيق <b>تسميع</b> هو أداة احترافية لمتابعة ومراجعة حفظ القرآن الكريم — يعمل بدون إنترنت، ويُحفظ تقدمك تلقائياً.</p>
+
+        <div class="about-section-title">📖 آلية التسميع</div>
+        <div class="about-features-grid">
+          <div class="about-feat">
+            <span class="about-feat-icon">👆</span>
+            <div><b>كشف الكلمات</b><br>اضغط على أي كلمة لإظهارها — تبقى ظاهرة حتى تعيد الضبط</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">۝</span>
+            <div><b>كشف الآية كاملة</b><br>اضغط على علامة الآية (۝) لكشف جميع كلماتها دفعة واحدة</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">👁️</span>
+            <div><b>إظهار الآية التالية</b><br>زر في الأسفل يكشف الآيات بالترتيب بذكاء دون إلزامك بالتسلسل</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">٢</span>
+            <div><b>كشف N كلمة</b><br>اضبط عدد الكلمات المكشوفة دفعة واحدة (١ إلى ٥) من زري + و −</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">↺</span>
+            <div><b>إعادة الضبط</b><br>يرجع السورة مخفية تماماً — مع إمكانية التراجع خلال ٤ ثوان</div>
+          </div>
         </div>
-        <div class="tut-step">
-          <span class="tut-icon">👁️</span>
-          <span>زر <b>إظهار الآية</b> في الأسفل بيكشف الآيات واحدة واحدة بالترتيب وبذكاء</span>
+
+        <div class="about-section-title">🎧 الاستماع</div>
+        <div class="about-features-grid">
+          <div class="about-feat">
+            <span class="about-feat-icon">🎧</span>
+            <div><b>اختيار القارئ</b><br>١٢ قارئاً متاحاً — الحصري، المنشاوي، السديس، العفاسي وغيرهم</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">▶</span>
+            <div><b>استماع للسورة كاملة</b><br>تشغيل متسلسل لجميع آيات السورة مع تمييز الآية الحالية تلقائياً</div>
+          </div>
         </div>
-        <div class="tut-step">
-          <span class="tut-icon">📖</span>
-          <span>علامة الكتاب (📖) بجانب أي آية تفتح <b>التفسير</b> المباشر (ميسر، ابن كثير، طبري)</span>
+
+        <div class="about-section-title">📊 تصنيف الحفظ</div>
+        <div class="about-features-grid">
+          <div class="about-feat">
+            <span class="about-feat-icon">🔴</span>
+            <div><b>يحتاج مراجعة</b><br>سور تحتاج عناية يومية — مجمّعة في لوحة مخصصة</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">🟡</span>
+            <div><b>جيد</b><br>حفظ مقبول يحتاج مراجعة دورية</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">🟢</span>
+            <div><b>ممتاز</b><br>سور راسخة في الذاكرة</div>
+          </div>
         </div>
-        <div class="tut-step">
-          <span class="tut-icon">📿</span>
-          <span>من القائمة الجانبية (☰) يمكنك الدخول لصفحة <b>الأذكار</b> الشاملة مع عداد ذكي وفضل كل ذكر</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">📜</span>
-          <span>زر <b>المصحف</b> بغير شكل العرض لشكل صفحة المصحف المتصلة الحقيقية</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">🎧</span>
-          <span>من قايمة <b>القراء</b> فوق تقدر تختار قارئك المفضل، ومنها تقدر تسمع أي آية وتتعلم النطق</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">🔍</span>
-          <span>قايمة <b>السور</b> الجديدة مجهزة بخاصية البحث السريع! جرب تبحث عن أي سورة وتجربها</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">٢</span>
-          <span>زر <b>كشف ٢ كلمة</b> بيكشف عدد معين من الكلمات، تقدر تغير الرقم بين ١ لـ ٥ حسب ما يناسبك</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">↺</span>
-          <span>زر <b>الريست</b> بيرجع السورة فاضية تماماً من الأول عشان تعبّر عن إتقانك وتعيد التسميع</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">🎨</span>
-          <span>استخدم أزرار التقييم بالأعلى (🔴 🟡 🟢) لتصنيف السورة حسب مستوى حفظك (يحتاج مراجعة، جيد، ممتاز)
-            لمراجعتها لاحقاً من القائمة الجانبية.</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">📚</span>
-          <span>التطبيق الآن يحتوي على <b>المصحف الشريف بالكامل</b> (١١٤ سورة).</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">📲</span>
-          <span>يمكنك <b>تثبيت التطبيق</b> على هاتفك للرجوع إليه بسهولة وتحديثه من القائمة الجانبية.</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">🚀</span>
-          <span><b>التنقل السريع:</b> انتقال مباشر بين مستويات الحفظ (🔴 🟡 🟢) بالأسهم العلوية.</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">🔔</span>
-          <span><b>مُذكرة الصلاة على النبي:</b> إشعارات يمكن إيقافها وتفعيلها عبر القائمة الجانبية.</span>
-        </div>
-        <div class="tut-step">
-          <span class="tut-icon">📥</span>
-          <span><b>تنزيل أوفلاين:</b> من القائمة الجانبية (☰) يمكنك تنزيل القرآن كاملاً لتسميعه وقراءته بدون إنترنت في
-            أي وقت.</span>
+
+        <div class="about-section-title">✨ مميزات إضافية</div>
+        <div class="about-features-grid">
+          <div class="about-feat">
+            <span class="about-feat-icon">📖</span>
+            <div><b>التفسير</b><br>اضغط 📖 بجانب أي آية — الميسر، ابن كثير، الطبري — بتحميل فوري بعد أول مرة</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">📜</span>
+            <div><b>وضع المصحف</b><br>عرض القرآن كنص متصل مثل صفحة المصحف الحقيقية</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">🔍</span>
+            <div><b>البحث في القرآن</b><br>ابحث عن أي كلمة أو آية في المصحف كاملاً</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">📿</span>
+            <div><b>الأذكار</b><br>أذكار الصباح والمساء وبعد الصلاة — مع عداد ذكي وفضل كل ذكر</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">📥</span>
+            <div><b>تنزيل أوفلاين</b><br>نزّل القرآن كاملاً (١١٤ سورة) من القائمة الجانبية للعمل بدون إنترنت</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">📲</span>
+            <div><b>تثبيت كتطبيق PWA</b><br>ثبّته على هاتفك من القائمة الجانبية للوصول السريع</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">🔔</span>
+            <div><b>مُذكّر الصلاة على النبي ﷺ</b><br>تنبيه لطيف كل دقيقتين — يمكن إيقافه من القائمة الجانبية</div>
+          </div>
+          <div class="about-feat">
+            <span class="about-feat-icon">🌙</span>
+            <div><b>الوضع الليلي</b><br>تبديل فوري بين الوضع الفاتح والداكن — يُحفظ تلقائياً</div>
+          </div>
         </div>
       </div>
-      <button class="overlay-btn" onclick="startApp()">ابدأ التحفيظ</button>
+      <div class="about-modal-footer">
+        <button class="about-close-btn" onclick="closeAboutModal()">حسناً، فهمت ✓</button>
+      </div>
     </div>
   </div>
 
@@ -280,14 +318,15 @@
   <!-- Tafsir Modal -->
   <div class="custom-modal-overlay" id="tafsirModal" onclick="closeTafsirModal(event)">
     <div class="custom-modal" onclick="event.stopPropagation()">
-      <div class="custom-modal-header">
-        <h3 class="custom-modal-title">تفسير الآية <span id="tafsirAyahNum"></span></h3>
-        <button class="custom-modal-close" onclick="closeTafsirModal()">×</button>
+      <div class="custom-modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h3 class="custom-modal-title" style="margin: 0;">تفسير الآية <span id="tafsirAyahNum"></span></h3>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <a href="download_tafsirs.html" class="btn-download-tafsir" style="background: var(--gold-dim); border: 1px solid var(--gold); border-radius: 6px; padding: 5px 10px; color: var(--gold); font-family: 'Cairo'; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none;">⚙️ إدارة التنزيلات</a>
+          <button class="custom-modal-close" onclick="closeTafsirModal()" style="position: static; margin: 0;">×</button>
+        </div>
       </div>
-      <div class="tabs-header">
-        <button class="tab-btn active" onclick="switchTafsirTab(16, this)">التفسير الميسر</button>
-        <button class="tab-btn" onclick="switchTafsirTab(14, this)">ابن كثير</button>
-        <button class="tab-btn" onclick="switchTafsirTab(15, this)">الطبري</button>
+      <div class="tabs-header" style="justify-content:center;">
+        <button class="tab-btn active" style="flex:1; text-align:center;">تفسير الميسر</button>
       </div>
       <div class="custom-modal-body" id="tafsirContent">
         <!-- Content injects here via JS -->
@@ -338,6 +377,7 @@
     </div>
   </div>
 
+  <script src="offline_tafsir.js"></script>
   <script src="app.js"></script>
   <script src="offline_quran.js"></script>
   <script>

@@ -6,6 +6,7 @@
 let currentMode  = 'page';
 let currentIndex = 1;
 let loadedSurahs = {};
+let chromeVisible = true;
 
 const SURAH_NAMES = [
   "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
@@ -91,6 +92,11 @@ function setMode(mode) {
   currentIndex = parseInt(localStorage.getItem('mos7af_index_' + mode)) || 1;
   localStorage.setItem('mos7af_mode', mode);
   container.className = 'mos7af-container mode-' + mode;
+  chromeVisible = true;
+  const hdr=document.querySelector('.mos7af-header');
+  const nav=document.querySelector('.mos7af-nav');
+  if(hdr) hdr.classList.remove('hidden');
+  if(nav) nav.classList.remove('hidden');
   updateSidebarUI();
   loadCurrentView();
 }
@@ -413,3 +419,20 @@ function jumpTo(index) {
   closeJumpModal();
   loadCurrentView();
 }
+
+// ── Immersive tap — single tap hides header+bottom, second tap returns ──
+function toggleChrome() {
+  chromeVisible = !chromeVisible;
+  const hdr = document.querySelector('.mos7af-header');
+  const nav = document.querySelector('.mos7af-nav');
+  if (hdr) hdr.classList.toggle('hidden', !chromeVisible);
+  if (nav) nav.classList.toggle('hidden', !chromeVisible);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const cont = document.getElementById('mos7afContainer');
+  if (!cont) return;
+  let sx=0, sy=0, moved=false;
+  cont.addEventListener('touchstart', e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; moved=false; }, {passive:true});
+  cont.addEventListener('touchmove', e=>{ const t=e.touches[0]; if(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10) moved=true; }, {passive:true});
+  cont.addEventListener('click', e=>{ if(moved){moved=false;return;} if(e.target.closest('.jump-modal, .sidebar')) return; if(e.target.closest('#mos7afContainer')) toggleChrome(); });
+});
