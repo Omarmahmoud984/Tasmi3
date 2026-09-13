@@ -302,17 +302,20 @@
       color: #5ecf8a;
     }
 
-    /* ── Hint text ── */
+    /* ── Hint text — 10% above controls, no overlap ── */
     #tapHint {
       position: fixed;
-      top: 55%;
+      bottom: calc(135px + 10% + env(safe-area-inset-bottom, 0px));
+      top: auto;
       left: 50%;
-      transform: translate(-50%, calc(-50% + clamp(5rem, 15vw, 9rem)));
+      transform: translateX(-50%);
       font-size: 0.75rem;
       color: var(--text3);
       letter-spacing: 1.5px;
       pointer-events: none;
       transition: opacity 0.8s ease;
+      text-align: center;
+      white-space: nowrap;
     }
 
     /* ── Completion popup ── */
@@ -385,6 +388,40 @@
       to {
         transform: scale(4);
         opacity: 0;
+      }
+    }
+
+    /* ── Responsive: short viewport / Split Screen ── */
+    /* Uses viewport height only — no device detection */
+    @media (max-height: 550px) {
+      #controls {
+        display: none !important;
+      }
+      #tapHint {
+        display: none !important;
+      }
+      #mainLayout {
+        inset: 0;
+        padding-top: env(safe-area-inset-top, 0);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        justify-content: center;
+      }
+      #counter {
+        font-size: clamp(5rem, 22vh, 11rem);
+      }
+      #modeLabel {
+        margin-bottom: 8px;
+      }
+      #btnBack {
+        top: max(8px, env(safe-area-inset-top, 8px));
+        right: max(8px, env(safe-area-inset-right, 8px));
+        padding: 6px 12px;
+        font-size: 0.8rem;
+      }
+    }
+    @media (max-height: 450px) {
+      #counter {
+        font-size: clamp(4rem, 26vh, 8rem);
       }
     }
   </style>
@@ -560,18 +597,21 @@
 
     // ── Events ──
 
-    // Tap area click (mouse)
-    tapArea.addEventListener('click', onTap);
+    // Unified tap handler — prevents double count on touch devices
+    let _touchFired = false;
+    tapArea.addEventListener('click', (e) => {
+      if (_touchFired) return;
+      onTap(e);
+    });
 
     // Touch — use touchend for tap feel; prevent double-fire with click
-    let _touchFired = false;
     tapArea.addEventListener('touchend', (e) => {
       e.preventDefault();
       _touchFired = true;
       const t = e.changedTouches[0];
       onTap({ clientX: t.clientX, clientY: t.clientY });
-      setTimeout(() => _touchFired = false, 300);
-    });
+      setTimeout(() => _touchFired = false, 350);
+    }, { passive: false });
 
     // Controls must not pass through to tapArea — already handled since they are above z-index 1
     // but let's also stop propagation on their container
