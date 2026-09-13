@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tasmi3-v58-cache';
+const CACHE_NAME = 'tasmi3-v59-cache';
 const urlsToCache = [
   './index.html',
   './search.html',
@@ -17,11 +17,10 @@ const urlsToCache = [
   './adhkar.html',
   './adhkar.js',
   './adhkar_data.js',
-  './offline_tafsir.js',
-  './download_tafsirs.html',
   './manifest.json',
   './icon.svg',
-  'https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap'
+  './fonts/scheherazade-new-400.woff2',
+  './fonts/scheherazade-new-700.woff2'
 ];
 
 self.addEventListener('install', event => {
