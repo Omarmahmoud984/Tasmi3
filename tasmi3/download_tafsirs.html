@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تنزيل التفاسير | تسميع</title>
+  <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header-bar {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-light);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .back-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      font-family: 'Cairo';
+      font-weight: bold;
+    }
+    .back-btn:hover {
+      color: var(--gold);
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .hero h1 {
+      color: var(--gold);
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      color: var(--text2);
+      font-size: 1.1rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border: 1px solid var(--border-light);
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 25px;
+    }
+    .form-label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+    .custom-select {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: 2px solid var(--border-light);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cairo';
+      font-size: 1.1rem;
+      cursor: pointer;
+      appearance: none;
+      transition: all 0.2s;
+    }
+    .custom-select:focus {
+      border-color: var(--gold);
+      outline: none;
+    }
+    
+    .surah-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .btn-select-all {
+      background: var(--gold-dim);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo';
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .btn-select-all:hover {
+      background: var(--gold);
+      color: #fff;
+    }
+
+    .surah-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      max-height: 350px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+    /* Custom Scrollbar for Grid */
+    .surah-grid::-webkit-scrollbar { width: 8px; }
+    .surah-grid::-webkit-scrollbar-track { background: var(--bg); border-radius: 8px; }
+    .surah-grid::-webkit-scrollbar-thumb { background: var(--gold-line); border-radius: 8px; }
+
+    .surah-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-bg);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .surah-item:hover {
+      border-color: var(--gold);
+    }
+    .surah-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+    .surah-item label {
+      cursor: pointer;
+      user-select: none;
+      font-size: 1rem;
+      flex: 1;
+    }
+
+    .surah-item.downloaded {
+      background: var(--bg);
+      border-color: transparent;
+      opacity: 0.6;
+      cursor: default;
+    }
+    .surah-item.downloaded:hover {
+      border-color: transparent;
+    }
+    .surah-item.downloaded label {
+      cursor: default;
+      color: var(--text2);
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .btn-download {
+      background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      font-size: 1.3rem;
+      font-family: 'Cairo';
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(212, 168, 83, 0.4);
+      transition: all 0.3s;
+    }
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 168, 83, 0.6);
+    }
+    .btn-download:disabled {
+      background: #ccc;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Progress Section */
+    .progress-section {
+      display: none;
+      margin-top: 30px;
+      padding-top: 25px;
+      border-top: 1px dashed var(--border-light);
+    }
+    .progress-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      background: var(--card-bg);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--gold-line);
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--gold);
+      /* No transition animation as requested */
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 1.1rem;
+      color: var(--text2);
+    }
+  </style>
+  <script>
+    // Apply theme early
+    (function () {
+      var theme = localStorage.getItem('tasmi3_theme') || 'light';
+      if (theme === 'dark') document.documentElement.classList.add('theme-dark-early');
+      else document.documentElement.classList.add('theme-light-early');
+    })();
+  </script>
+</head>
+
+<body>
+  <!-- Initialize theme classes for JS -->
+  <script>
+    if (localStorage.getItem('tasmi3_theme') === 'dark') {
+      document.body.classList.add('theme-dark');
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.body.classList.add('theme-light');
+      document.documentElement.style.colorScheme = 'light';
+    }
+  </script>
+
+  <div class="header-bar">
+    <a href="index.html" class="back-btn">
+      <span>→</span>
+      <span>الرئيسية</span>
+    </a>
+  </div>
+
+  <div class="container">
+    <div class="hero">
+      <h1>إدارة التفاسير (بدون إنترنت)</h1>
+      <p>اختر التفسير والسور التي ترغب في حفظها على جهازك لتتمكن من قراءتها في أي وقت بدون الحاجة للاتصال بالإنترنت.</p>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <select id="tafsirSelect" class="custom-select" onchange="updateGridStatus()" style="display:none;">
+          <option value="16" selected>تفسير الميسر</option>
+        </select>
+        <div style="padding:14px; background:var(--gold-dim); border:1px solid var(--gold); border-radius:10px; color:var(--gold); font-weight:bold; text-align:center;">تفسير الميسر</div>
+        <button id="btnClearTafsir" onclick="clearSelectedTafsir()" style="margin-top: 12px; width: 100%; padding: 12px; border-radius: 10px; border: 1px dashed #e74c3c; background: rgba(231,76,60,0.08); color: #e74c3c; font-family: 'Cairo'; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">🗑 حذف التفسير المخزن</button>
+      </div>
+
+      <div id="surahGridWrap" class="form-group">
+        <div class="surah-header">
+          <label class="form-label" style="margin: 0;">حدد السور:</label>
+          <button class="btn-select-all" onclick="toggleSelectAll()">تحديد الكل / إلغاء</button>
+        </div>
+        <div class="surah-grid" id="surahGrid">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <div id="fullyDownloadedUI" style="display: none; text-align: center; padding: 40px 20px; background: rgba(212, 168, 83, 0.1); border: 2px dashed var(--gold); border-radius: 16px; margin-bottom: 25px;">
+        <h2 style="color: var(--gold); margin: 0 0 10px 0; font-family: 'Cairo';">تفسير مكتمل</h2>
+        <p style="color: var(--text); font-size: 1.2rem; margin: 0;">لقد قمت بتنزيل جميع سور القرآن (١١٤ سورة) لهذا التفسير بنجاح.<br>وهو الآن متاح بالكامل للعمل بدون إنترنت.</p>
+      </div>
+
+      <div class="action-row" id="actionRow">
+        <button class="btn-download" id="btnDownload" onclick="startDownload()">⬇ بدء التنزيل</button>
+      </div>
+
+      <div class="progress-section" id="progressSection">
+        <div class="progress-label" id="progressLabel">جاري تحضير التنزيل...</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="progressPct">0%</span>
+          <span id="progressCount">0 / 0 سورة</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Surah Names List -->
+  <script>
+    const SURAH_NAMES = [
+      "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه", "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم", "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر", "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق", "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة", "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج", "نوح", "الجن", "المزمل", " المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس", "التكوير", "الإنفطار", "المطففين", "الإنشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد", "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات", "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر", "المسد", "الإخلاص", "الفلق", "الناس"
+    ];
+
+    // Populate grid
+    const grid = document.getElementById('surahGrid');
+    for (let i = 0; i < 114; i++) {
+      const num = i + 1;
+      const item = document.createElement('div');
+      item.className = 'surah-item';
+      item.id = 'item_' + num;
+      
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'surah-cb';
+      cb.value = num;
+      cb.id = 'cb_' + num;
+      
+      const label = document.createElement('label');
+      label.htmlFor = 'cb_' + num;
+      label.id = 'label_' + num;
+      label.textContent = `${num}. ${SURAH_NAMES[i]}`;
+      
+      // Allow clicking entire row to toggle
+      item.onclick = (e) => {
+        if(!item.classList.contains('downloaded') && e.target !== cb && e.target !== label) {
+          cb.checked = !cb.checked;
+        }
+      };
+
+      item.appendChild(cb);
+      item.appendChild(label);
+      grid.appendChild(item);
+    }
+
+    function toggleSelectAll() {
+      const cbs = document.querySelectorAll('.surah-cb:not(:disabled)');
+      let allChecked = true;
+      cbs.forEach(cb => { if (!cb.checked) allChecked = false; });
+      cbs.forEach(cb => { cb.checked = !allChecked; });
+    }
+  </script>
+
+  <!-- Load the offline engine -->
+  <script src="offline_tafsir.js"></script>
+  
+  <!-- Page Logic -->
+  <script>
+    let isDownloading = false;
+
+    async function updateGridStatus() {
+      if (typeof window.otCheckDownloadedSurahs !== 'function') return;
+      
+      const tafsirId = document.getElementById('tafsirSelect').value;
+      const downloaded = await window.otCheckDownloadedSurahs(tafsirId);
+      
+      const gridWrap = document.getElementById('surahGridWrap');
+      const fullyUI = document.getElementById('fullyDownloadedUI');
+      const actionRow = document.getElementById('actionRow');
+
+      if (downloaded.length === 114) {
+        // All surahs downloaded for this tafsir!
+        gridWrap.style.display = 'none';
+        actionRow.style.display = 'none';
+        fullyUI.style.display = 'block';
+      } else {
+        // Not fully downloaded yet
+        gridWrap.style.display = 'block';
+        actionRow.style.display = 'flex';
+        fullyUI.style.display = 'none';
+        
+        for (let i = 1; i <= 114; i++) {
+          const item = document.getElementById('item_' + i);
+          const cb = document.getElementById('cb_' + i);
+          const label = document.getElementById('label_' + i);
+          
+          if (downloaded.includes(i)) {
+            item.classList.add('downloaded');
+            cb.checked = false;
+            cb.disabled = true;
+            cb.style.display = 'none'; // hide checkbox
+            // Removed emoji for cleaner look
+            label.innerHTML = `<span style="color:var(--gold); font-weight:bold;">✓</span> ${i}. ${SURAH_NAMES[i-1]}`;
+          } else {
+            item.classList.remove('downloaded');
+            cb.disabled = false;
+            cb.style.display = '';
+            label.innerHTML = `${i}. ${SURAH_NAMES[i-1]}`;
+          }
+        }
+      }
+    }
+
+    // Call once on page load to initialize the grid — await DB ready
+    window.addEventListener('load', async () => {
+      // wait until offline_tafsir.js has opened DB
+      for (let i = 0; i < 20; i++) {
+        if (typeof window.otCheckDownloadedSurahs === 'function') break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      await updateGridStatus();
+    });
+
+    async function startDownload() {
+      if (isDownloading) return;
+
+      const cbs = document.querySelectorAll('.surah-cb:checked');
+      const selectedSurahs = Array.from(cbs).map(cb => parseInt(cb.value));
+      
+      if (selectedSurahs.length === 0) {
+        alert('الرجاء تحديد سورة واحدة على الأقل للتنزيل.');
+        return;
+      }
+
+      const tafsirId = document.getElementById('tafsirSelect').value;
+      const btn = document.getElementById('btnDownload');
+      const progSec = document.getElementById('progressSection');
+      const label = document.getElementById('progressLabel');
+      const fill = document.getElementById('progressFill');
+      const pctText = document.getElementById('progressPct');
+      const countText = document.getElementById('progressCount');
+
+      isDownloading = true;
+      btn.disabled = true;
+      btn.textContent = 'جاري التنزيل...';
+      progSec.style.display = 'block';
+
+      const total = selectedSurahs.length;
+      let done = 0;
+      let failed = 0;
+
+      for (const surah of selectedSurahs) {
+        label.textContent = `جاري تنزيل سورة ${SURAH_NAMES[surah - 1]}...`;
+        try {
+          await window.fetchSurahTafsirQuranCom('16', surah);
+          done++;
+          const percent = Math.round((done / total) * 100);
+          fill.style.width = percent + '%';
+          pctText.textContent = percent + '%';
+          countText.textContent = `${done} / ${total} سورة`;
+          await new Promise(r => setTimeout(r, 200));
+        } catch (err) {
+          console.error(err);
+          failed++;
+          label.textContent = `⚠️ فشل ${SURAH_NAMES[surah - 1]} — سيعاد المحاولة لاحقاً`;
+          await new Promise(r => setTimeout(r, 1200));
+        }
+      }
+
+      isDownloading = false;
+      if (failed === 0) label.textContent = '✅ اكتمل التنزيل بنجاح!';
+      else label.textContent = `⚠️ اكتمل مع ${failed} فشل — أعد المحاولة للسور الفاشلة`;
+      
+      // After 1.5s: fully reset UI without reloading the page
+      setTimeout(() => {
+        // Hide the progress section
+        progSec.style.display = 'none';
+        // Reset progress bar to 0
+        fill.style.width = '0%';
+        pctText.textContent = '0%';
+        countText.textContent = '0 / 0 سورة';
+        label.textContent = 'جاري تحضير التنزيل...';
+        // Restore the download button
+        btn.style.display = '';
+        btn.textContent = '⬇ بدء التنزيل';
+        btn.disabled = false;
+        // Refresh grid to show newly downloaded surahs as grayed out
+        updateGridStatus();
+      }, 3000);
+    }
+
+    async function clearSelectedTafsir() {
+      if (typeof window.otClearTafsir !== 'function') {
+        alert('خطأ: لم يتم تحميل محرك التنزيل بعد. أعد تحميل الصفحة.');
+        return;
+      }
+      const tafsirId = document.getElementById('tafsirSelect').value;
+      const tafsirName = document.getElementById('tafsirSelect').selectedOptions[0].text;
+      if (!confirm(`هل أنت متأكد من حذف جميع بيانات "${tafsirName}" المحفوظة على جهازك؟`)) return;
+      
+      const btn = document.getElementById('btnClearTafsir');
+      btn.disabled = true;
+      btn.textContent = 'جاري الحذف...';
+      
+      const deleted = await window.otClearTafsir(tafsirId);
+      
+      btn.textContent = `✓ تم مسح تفسير ${tafsirName}`;
+      btn.style.borderColor = 'var(--gold)';
+      btn.style.color = 'var(--gold)';
+      btn.style.background = 'var(--gold-dim)';
+      
+      setTimeout(() => {
+        btn.textContent = '🗑 حذف التفسير المخزن';
+        btn.style.borderColor = '#e74c3c';
+        btn.style.color = '#e74c3c';
+        btn.style.background = 'rgba(231,76,60,0.08)';
+        btn.disabled = false;
+      }, 2500);
+      
+      updateGridStatus();
+    }
+  </script>
+</body>
+</html>
