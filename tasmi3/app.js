@@ -1107,6 +1107,19 @@ function createAyahBlock(idx, surah, animate) {
   tafsirIcon.addEventListener('click', () => openTafsirModal(currentSurah, idx + 1));
   textDiv.appendChild(tafsirIcon);
 
+  // Verse Image Icon — next to 📖
+  const verseImgIcon = document.createElement('span');
+  verseImgIcon.className = 'tafsir-icon';
+  verseImgIcon.textContent = '📷';
+  verseImgIcon.title = 'تحميل الآية كصورة';
+  verseImgIcon.addEventListener('click', () => {
+    if (typeof exportVerseImage === 'function') {
+      const txt = surah.ayahs[idx];
+      exportVerseImage(currentSurah, idx + 1, txt);
+    }
+  });
+  textDiv.appendChild(verseImgIcon);
+
   // Sajda marker
   if (surah.sajda !== undefined && surah.sajda === idx) {
     const sajdaMark = document.createElement('span');
@@ -1364,6 +1377,20 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
   popup.appendChild(undoBtn);
   popup.appendChild(playBtn);
   popup.appendChild(tafsirBtn);
+
+  // Download as image — mushaf mode
+  const imgBtn = document.createElement('button');
+  imgBtn.textContent = '📷 تحميل كصورة';
+  imgBtn.title = 'تحميل الآية كصورة';
+  imgBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const sd = SURAHS[currentSurah];
+    if (sd && typeof exportVerseImage === 'function') {
+      exportVerseImage(currentSurah, idx + 1, sd.ayahs[idx]);
+    }
+    overlay.remove();
+  });
+  popup.appendChild(imgBtn);
 
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
