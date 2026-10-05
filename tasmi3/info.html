@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>فهرس القرآن — Info - تسميع</title>
+  <script>
+    (function () {
+      var theme = localStorage.getItem('tasmi3_theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('theme-dark-early');
+      } else {
+        document.documentElement.classList.add('theme-light-early');
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    .header-compact { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--header-bg); border-bottom: 1px solid var(--gold-line); position: sticky; top: 0; z-index: 100; }
+    .page-title { color: var(--gold); font-family: 'Cairo'; font-weight: bold; font-size: 1.3rem; margin: 0; }
+    .info-wrap { flex: 1; padding: 24px 16px 60px; max-width: 900px; margin: 0 auto; width: 100%; }
+    .info-search { width: 100%; background: var(--custom-search-bg); border: 1px solid var(--gold-line); color: var(--text); padding: 10px 14px; border-radius: 10px; font-family: 'Cairo'; font-size: 0.95rem; outline: none; direction: rtl; margin-bottom: 16px; }
+    .info-search:focus { border-color: var(--gold); }
+    .info-count { color: var(--text2); font-size: 0.85rem; margin-bottom: 12px; text-align: center; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+    .info-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--gold-line); border-radius: 12px; padding: 12px 14px; text-decoration: none; color: var(--text); transition: border-color 0.2s, background 0.2s, transform 0.12s; }
+    .info-card:hover { border-color: var(--gold); background: var(--gold-dim); }
+    .info-card:active { transform: scale(0.98); }
+    .info-num { min-width: 38px; height: 38px; border-radius: 10px; background: var(--gold-dim); border: 1px solid var(--gold-line); color: var(--gold); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+    .info-names { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .info-name { font-weight: 700; font-size: 1rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .info-meta { font-size: 0.8rem; color: var(--text2); }
+    .info-meta b { color: var(--gold); }
+    @media (max-width: 480px) {
+      .info-wrap { padding: 16px 12px 60px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Sidebar -->
+  <div class="sidebar-overlay" id="navSidebarOverlay" onclick="toggleNavSidebar()"></div>
+  <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
+      <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
+      <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="search.html" class="nav-link">🔍 البحث في القرآن</a>
+      <a href="mos7af.html" class="nav-link">📖 المصحف الشريف</a>
+      <a href="info.html" class="nav-link active">ℹ️ Info</a>
+      <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
+      <a href="hadeeth.html" class="nav-link" style="color: var(--gold);">الأربعون النووية 📜</a>
+      <a href="tasbeeh.html" class="nav-link">السبحة 📿</a>
+      <a href="needs_review.html" class="nav-link">يحتاج مراجعة 🔴</a>
+      <a href="good.html" class="nav-link">جيد 🟡</a>
+      <a href="perfect.html" class="nav-link">ممتاز 🟢</a>
+      <div class="nav-toggle-row">
+        <span>إشعارات الصلاة على النبي ﷺ</span>
+        <input type="checkbox" id="toggleDhikrPopup" onchange="toggleDhikrPopupSetting(this)" checked>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-compact">
+    <h1 class="page-title">ℹ️ فهرس القرآن — Quran Index</h1>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="index.html" style="background: var(--surface); border: 1px solid var(--gold-line); color: var(--text); padding: 4px 10px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; white-space: nowrap;">الرئيسية</a>
+      <button id="btnNav" onclick="toggleNavSidebar()" style="background: var(--gold); border: 1px solid var(--gold); color: var(--bg); padding: 4px 10px; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: bold;">☰</button>
+    </div>
+  </div>
+
+  <div class="info-wrap">
+    <input type="search" id="infoSearch" class="info-search" placeholder="ابحث باسم السورة أو رقمها..." autocomplete="off">
+    <div class="info-count" id="infoCount"></div>
+    <div class="info-grid" id="infoGrid"></div>
+  </div>
+
+  <script>
+    // [number, arabicName, ayahCount, juzArray] — Hafs order, Juz from verse boundaries
+    var SURAHS_INFO = [
+      [1,"الفاتحة",7,[1]],[2,"البقرة",286,[1,2,3]],[3,"آل عمران",200,[3,4]],[4,"النساء",176,[4,5,6]],[5,"المائدة",120,[6,7]],
+      [6,"الأنعام",165,[7,8]],[7,"الأعراف",206,[8,9]],[8,"الأنفال",75,[9,10]],[9,"التوبة",129,[10,11]],[10,"يونس",109,[11]],
+      [11,"هود",123,[11,12]],[12,"يوسف",111,[12,13]],[13,"الرعد",43,[13]],[14,"إبراهيم",52,[13]],[15,"الحجر",99,[14]],
+      [16,"النحل",128,[14]],[17,"الإسراء",111,[15]],[18,"الكهف",110,[15,16]],[19,"مريم",98,[16]],[20,"طه",135,[16]],
+      [21,"الأنبياء",112,[17]],[22,"الحج",78,[17]],[23,"المؤمنون",118,[18]],[24,"النور",64,[18]],[25,"الفرقان",77,[18,19]],
+      [26,"الشعراء",227,[19]],[27,"النمل",93,[19,20]],[28,"القصص",88,[20]],[29,"العنكبوت",69,[20,21]],[30,"الروم",60,[21]],
+      [31,"لقمان",34,[21]],[32,"السجدة",30,[21]],[33,"الأحزاب",73,[21,22]],[34,"سبأ",54,[22]],[35,"فاطر",45,[22]],
+      [36,"يس",83,[22,23]],[37,"الصافات",182,[23]],[38,"ص",88,[23]],[39,"الزمر",75,[23,24]],[40,"غافر",85,[24]],
+      [41,"فصلت",54,[24,25]],[42,"الشورى",53,[25]],[43,"الزخرف",89,[25]],[44,"الدخان",59,[25]],[45,"الجاثية",37,[25]],
+      [46,"الأحقاف",35,[26]],[47,"محمد",38,[26]],[48,"الفتح",29,[26]],[49,"الحجرات",18,[26]],[50,"ق",45,[26]],
+      [51,"الذاريات",60,[26,27]],[52,"الطور",49,[27]],[53,"النجم",62,[27]],[54,"القمر",55,[27]],[55,"الرحمن",78,[27]],
+      [56,"الواقعة",96,[27]],[57,"الحديد",29,[27]],[58,"المجادلة",22,[28]],[59,"الحشر",24,[28]],[60,"الممتحنة",13,[28]],
+      [61,"الصف",14,[28]],[62,"الجمعة",11,[28]],[63,"المنافقون",11,[28]],[64,"التغابن",18,[28]],[65,"الطلاق",12,[28]],
+      [66,"التحريم",12,[28]],[67,"الملك",30,[29]],[68,"القلم",52,[29]],[69,"الحاقة",52,[29]],[70,"المعارج",44,[29]],
+      [71,"نوح",28,[29]],[72,"الجن",28,[29]],[73,"المزمل",20,[29]],[74,"المدثر",56,[29]],[75,"القيامة",40,[29]],
+      [76,"الإنسان",31,[29]],[77,"المرسلات",50,[29]],[78,"النبأ",40,[30]],[79,"النازعات",46,[30]],[80,"عبس",42,[30]],
+      [81,"التكوير",29,[30]],[82,"الانفطار",19,[30]],[83,"المطففين",36,[30]],[84,"الانشقاق",25,[30]],[85,"البروج",22,[30]],
+      [86,"الطارق",17,[30]],[87,"الأعلى",19,[30]],[88,"الغاشية",26,[30]],[89,"الفجر",30,[30]],[90,"البلد",20,[30]],
+      [91,"الشمس",15,[30]],[92,"الليل",21,[30]],[93,"الضحى",11,[30]],[94,"الشرح",8,[30]],[95,"التين",8,[30]],
+      [96,"العلق",19,[30]],[97,"القدر",5,[30]],[98,"البينة",8,[30]],[99,"الزلزلة",8,[30]],[100,"العاديات",11,[30]],
+      [101,"القارعة",11,[30]],[102,"التكاثر",8,[30]],[103,"العصر",3,[30]],[104,"الهمزة",9,[30]],[105,"الفيل",5,[30]],
+      [106,"قريش",4,[30]],[107,"الماعون",7,[30]],[108,"الكوثر",3,[30]],[109,"الكافرون",6,[30]],[110,"النصر",3,[30]],
+      [111,"المسد",5,[30]],[112,"الإخلاص",4,[30]],[113,"الفلق",5,[30]],[114,"الناس",6,[30]]
+    ];
+
+    function juzLabel(juz) {
+      if (juz.length === 1) return 'الجزء ' + juz[0];
+      var parts = [];
+      for (var i = 0; i < juz.length; i++) parts.push(juz[i]);
+      return 'الأجزاء ' + parts.join('، ');
+    }
+
+    function renderInfo(filter) {
+      var grid = document.getElementById('infoGrid');
+      var count = document.getElementById('infoCount');
+      grid.innerHTML = '';
+      var shown = 0;
+      var q = (filter || '').trim();
+      for (var i = 0; i < SURAHS_INFO.length; i++) {
+        var s = SURAHS_INFO[i];
+        var num = s[0], name = s[1], ayahs = s[2], juz = s[3];
+        if (q && name.indexOf(q) === -1 && String(num).indexOf(q) === -1) continue;
+        shown++;
+        var a = document.createElement('a');
+        a.className = 'info-card';
+        a.href = 'index.html?surah=' + num;
+        a.setAttribute('data-surah', String(num));
+        var n = document.createElement('div');
+        n.className = 'info-num';
+        n.textContent = num;
+        var wrap = document.createElement('div');
+        wrap.className = 'info-names';
+        var nm = document.createElement('div');
+        nm.className = 'info-name';
+        nm.textContent = name;
+        var meta = document.createElement('div');
+        meta.className = 'info-meta';
+        meta.innerHTML = '<b>' + ayahs + '</b> آيات — ' + juzLabel(juz);
+        wrap.appendChild(nm);
+        wrap.appendChild(meta);
+        a.appendChild(n);
+        a.appendChild(wrap);
+        grid.appendChild(a);
+      }
+      if (count) count.textContent = 'عدد السور المعروضة: ' + shown + ' / 114';
+    }
+
+    function toggleNavSidebar() {
+      document.getElementById('navSidebar').classList.toggle('show');
+      document.getElementById('navSidebarOverlay').classList.toggle('show');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      renderInfo('');
+      var inp = document.getElementById('infoSearch');
+      if (inp) inp.addEventListener('input', function () { renderInfo(inp.value); });
+      var cb = document.getElementById('toggleDhikrPopup');
+      try {
+        if (cb && typeof isDhikrPopupEnabled === 'function') cb.checked = isDhikrPopupEnabled();
+      } catch (e) {}
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        try { navigator.serviceWorker.register('sw.js'); } catch (e) {}
+      });
+    }
+  </script>
+</body>
+</html>

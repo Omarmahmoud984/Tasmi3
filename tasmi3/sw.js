@@ -1,6 +1,7 @@
-const CACHE_NAME = 'tasmi3-v63-cache';
+const CACHE_NAME = 'tasmi3-v64-cache';
 const urlsToCache = [
   './index.html',
+  './info.html',
   './search.html',
   './mos7af.html',
   './mos7af.css',
