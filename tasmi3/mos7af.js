@@ -108,7 +108,7 @@ async function fetchSurah(surahId) {
   // 1. IndexedDB
   try {
     const idb = await new Promise((res, rej) => {
-      const r = indexedDB.open('tasmi3_quran_offline', 1);
+      const r = indexedDB.open('tasmi3_quran_offline', 2);
       r.onsuccess = () => res(r.result);
       r.onerror   = () => rej();
     });

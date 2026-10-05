@@ -456,7 +456,7 @@
     function _openIDB() {
       if (_idbPromise) return _idbPromise;
       _idbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open(IDB_NAME, 1);
+        const req = indexedDB.open(IDB_NAME, 2);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains(IDB_STORE))

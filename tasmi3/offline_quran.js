@@ -16,18 +16,48 @@
 // ══════════════════════════════════════════════════════════
 
 const OQ_DB_NAME    = 'tasmi3_quran_offline';
-const OQ_DB_VERSION = 1;
+const OQ_DB_VERSION = 2;
 const OQ_STORE      = 'surahs';
 const OQ_META_STORE = 'meta';
 
 let _oqDb = null;
 
-/** Open (or create) the IndexedDB database */
-function oqOpenDB() {
-  return new Promise((resolve, reject) => {
-    if (_oqDb) return resolve(_oqDb);
+function _oqWithTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Timeout: ' + (label || 'IDB'))), ms || 5000);
+  });
+  return Promise.race([promise, timeout]).then(
+    (v) => { clearTimeout(timer); return v; },
+    (e) => { clearTimeout(timer); throw e; }
+  );
+}
 
-    const req = indexedDB.open(OQ_DB_NAME, OQ_DB_VERSION);
+/** Open (or create) the IndexedDB database — heals missing stores, never hangs */
+function oqOpenDB() {
+  return _oqWithTimeout(new Promise((resolve, reject) => {
+    if (_oqDb) {
+      try {
+        // Heal: if cached connection lacks a store (old v1 DB), drop it and reopen
+        if (!Array.from(_oqDb.objectStoreNames || []).includes(OQ_STORE) ||
+            !Array.from(_oqDb.objectStoreNames || []).includes(OQ_META_STORE)) {
+          try { _oqDb.close(); } catch {}
+          _oqDb = null;
+        } else {
+          return resolve(_oqDb);
+        }
+      } catch { try { _oqDb.close(); } catch {} _oqDb = null; }
+    }
+
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('indexedDB unavailable'));
+      return;
+    }
+
+    let req;
+    try {
+      req = indexedDB.open(OQ_DB_NAME, OQ_DB_VERSION);
+    } catch (e) { reject(e); return; }
 
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
@@ -41,11 +71,20 @@ function oqOpenDB() {
 
     req.onsuccess = (e) => {
       _oqDb = e.target.result;
+      try {
+        _oqDb.onversionchange = () => { try { _oqDb.close(); } catch {} _oqDb = null; };
+      } catch {}
       resolve(_oqDb);
     };
 
-    req.onerror = () => reject(req.error);
-  });
+    req.onerror = () => reject(req.error || new Error('IDB open failed'));
+    req.onblocked = () => {
+      // Another tab holds old connection — close ours and retry once
+      try { if (_oqDb) _oqDb.close(); } catch {}
+      _oqDb = null;
+      reject(new Error('IDB blocked by another tab — close other tabs and retry'));
+    };
+  }), 8000, 'IDB open');
 }
 
 /** Save a surah object to IndexedDB */
@@ -70,15 +109,26 @@ async function oqGetSurah(id) {
   });
 }
 
-/** Count how many surahs are stored */
+/** Count how many surahs are stored — tolerant: missing store = 0, never throws freeze */
 async function oqCountSurahs() {
-  const db = await oqOpenDB();
-  return new Promise((resolve, reject) => {
-    const tx  = db.transaction(OQ_STORE, 'readonly');
-    const req = tx.objectStore(OQ_STORE).count();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
-  });
+  try {
+    const db = await oqOpenDB();
+    return await new Promise((resolve, reject) => {
+      let tx;
+      try { tx = db.transaction(OQ_STORE, 'readonly'); }
+      catch (e) {
+        // Missing store (old DB) → treat as empty, healing happens on next versionchange
+        if (e && (e.name === 'NotFoundError' || e.name === 'InvalidStateError')) return resolve(0);
+        return reject(e);
+      }
+      const req = tx.objectStore(OQ_STORE).count();
+      req.onsuccess = () => resolve(req.result || 0);
+      req.onerror   = () => reject(req.error);
+    });
+  } catch (e) {
+    if (e && (e.name === 'NotFoundError' || e.name === 'InvalidStateError')) return 0;
+    throw e;
+  }
 }
 
 /** Save a meta key/value (used for resume pointer) */
@@ -92,15 +142,25 @@ async function oqSetMeta(key, value) {
   });
 }
 
-/** Get a meta value */
+/** Get a meta value — tolerant: missing store = null (resume from IDB count) */
 async function oqGetMeta(key) {
-  const db = await oqOpenDB();
-  return new Promise((resolve, reject) => {
-    const tx  = db.transaction(OQ_META_STORE, 'readonly');
-    const req = tx.objectStore(OQ_META_STORE).get(key);
-    req.onsuccess = () => resolve(req.result ? req.result.value : null);
-    req.onerror   = () => reject(req.error);
-  });
+  try {
+    const db = await oqOpenDB();
+    return await new Promise((resolve, reject) => {
+      let tx;
+      try { tx = db.transaction(OQ_META_STORE, 'readonly'); }
+      catch (e) {
+        if (e && (e.name === 'NotFoundError' || e.name === 'InvalidStateError')) return resolve(null);
+        return reject(e);
+      }
+      const req = tx.objectStore(OQ_META_STORE).get(key);
+      req.onsuccess = () => resolve(req.result ? req.result.value : null);
+      req.onerror   = () => reject(req.error);
+    });
+  } catch (e) {
+    if (e && (e.name === 'NotFoundError' || e.name === 'InvalidStateError')) return null;
+    throw e;
+  }
 }
 
 /** Delete all stored surah data (for a full re-download) */
@@ -194,16 +254,24 @@ function _oqParseSurahData(data, id) {
  */
 async function _oqFetchSurah(id, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
+    // Cancel mid-flight
+    if (_oqCancelFlag) throw new Error('cancelled');
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch {} }, 15000) : null;
     try {
       // cache: 'reload' = send network request, ignore & update HTTP cache
-      const res = await fetch(OQ_API_BASE + id, { cache: 'reload' });
+      const res = await fetch(OQ_API_BASE + id, { cache: 'reload', signal: ctrl ? ctrl.signal : undefined });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return _oqParseSurahData(data, id);
     } catch (err) {
+      if (err && err.name === 'AbortError') err = new Error('Network timeout — تحقق من الاتصال');
+      if (_oqCancelFlag) throw new Error('cancelled');
       if (attempt === retries) throw err;
       // Exponential back-off: 1s, 2s
       await new Promise(r => setTimeout(r, attempt * 1000));
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 }
@@ -221,18 +289,23 @@ function _oqYield() {
  * Calls progress callback: { downloaded, total, surahId, surahName, percent }
  */
 async function oqDownloadAll(onProgress, onError, onComplete) {
-  if (_oqDownloading) return;
+  if (_oqDownloading) {
+    if (onError) onError({ surahId: 0, surahName: '', error: 'already-downloading' });
+    return;
+  }
   _oqDownloading = true;
   _oqCancelFlag  = false;
 
-  // Determine resume point
-  const lastDone = (await oqGetMeta(OQ_RESUME_KEY)) || 0;
-  let downloaded = lastDone;
-
-  // Count already-stored surahs for accurate progress
-  // (In case meta is out of sync)
-  const alreadyStored = await oqCountSurahs();
-  downloaded = Math.max(lastDone, alreadyStored);
+  // Determine resume point — never leave flag stuck if IDB hangs
+  let lastDone = 0;
+  let alreadyStored = 0;
+  try {
+    lastDone = (await _oqWithTimeout(oqGetMeta(OQ_RESUME_KEY), 6000, 'meta')) || 0;
+  } catch (e) { lastDone = 0; }
+  try {
+    alreadyStored = await _oqWithTimeout(oqCountSurahs(), 6000, 'count');
+  } catch (e) { alreadyStored = 0; }
+  let downloaded = Math.max(lastDone || 0, alreadyStored || 0);
 
   for (let id = downloaded + 1; id <= OQ_TOTAL; id++) {
     // Check cancel
@@ -245,8 +318,12 @@ async function oqDownloadAll(onProgress, onError, onComplete) {
       // Fetch
       const surahData = await _oqFetchSurah(id);
 
-      // Store in IndexedDB
-      await oqSaveSurah(surahData);
+      // Store in IndexedDB — fallback to localStorage so a blocked IDB never freezes at 0%
+      try {
+        await oqSaveSurah(surahData);
+      } catch (saveErr) {
+        try { localStorage.setItem('tasmi3_oq_fallback_' + id, JSON.stringify(surahData)); } catch {}
+      }
 
       // Also update the in-memory SURAHS cache if app is loaded
       if (typeof SURAHS !== 'undefined') {
@@ -257,16 +334,20 @@ async function oqDownloadAll(onProgress, onError, onComplete) {
         };
       }
 
-      // Save resume pointer
-      await oqSetMeta(OQ_RESUME_KEY, id);
+      // Save resume pointer (non-fatal if it fails)
+      try { await oqSetMeta(OQ_RESUME_KEY, id); } catch {}
 
       downloaded = id;
       const percent = Math.round((downloaded / OQ_TOTAL) * 100);
       if (onProgress) onProgress({ downloaded, total: OQ_TOTAL, surahId: id, surahName: OQ_SURAH_NAMES[id], percent });
 
     } catch (err) {
+      if (err && err.message === 'cancelled') {
+        _oqDownloading = false;
+        return;
+      }
       // Network or parse failure
-      if (onError) onError({ surahId: id, surahName: OQ_SURAH_NAMES[id], error: err.message });
+      if (onError) onError({ surahId: id, surahName: OQ_SURAH_NAMES[id], error: (err && err.message) || String(err) });
       _oqDownloading = false;
       return;
     }
@@ -401,9 +482,21 @@ async function oqOpenModal() {
   }
 }
 
-/** Close the download modal */
+/** Close the download modal — always closable; cancels download first if running */
 function oqCloseModal(force) {
-  if (_oqDownloading && !force) return; // don't close while downloading
+  if (_oqDownloading) {
+    try { oqCancelDownload(); } catch {}
+    _oqDownloading = false;
+    const btnCancel = document.getElementById('oqBtnCancel');
+    const btnClose = document.getElementById('oqBtnClose');
+    const btnStart = document.getElementById('oqBtnStart');
+    if (btnCancel) btnCancel.style.display = 'none';
+    if (btnClose) btnClose.style.display = '';
+    if (btnStart && btnStart.style.display === 'none') {
+      btnStart.textContent = '▶ استكمال التنزيل';
+      btnStart.style.display = '';
+    }
+  }
   const modal = document.getElementById('oqModal');
   if (modal) modal.classList.remove('oq-modal--open');
   document.body.style.overflow = '';
@@ -417,7 +510,10 @@ function _oqShowProgress(show) {
 
 /** Called when user presses "Start Download" */
 async function oqStartDownload() {
-  if (_oqDownloading) return;
+  if (_oqDownloading) {
+    if (typeof showToast === 'function') showToast('التنزيل جارٍ بالفعل...');
+    return;
+  }
 
   const btnStart  = document.getElementById('oqBtnStart');
   const btnCancel = document.getElementById('oqBtnCancel');
@@ -438,6 +534,10 @@ async function oqStartDownload() {
     },
     // onError
     ({ surahId, surahName, error }) => {
+      if (error === 'already-downloading') {
+        if (typeof showToast === 'function') showToast('التنزيل جارٍ بالفعل...');
+        return;
+      }
       _oqShowProgress(false);
       if (btnStart) {
         btnStart.textContent = '↺ إعادة المحاولة';
@@ -448,9 +548,10 @@ async function oqStartDownload() {
 
       const infoEl = document.getElementById('oqModalInfo');
       if (infoEl) {
-        infoEl.innerHTML = `<div class="oq-info-row oq-error">⚠️ فشل تنزيل سورة "${surahName}". تحقق من الاتصال وأعد المحاولة.</div>`;
+        const detail = error ? ` (${error})` : '';
+        infoEl.innerHTML = `<div class="oq-info-row oq-error">⚠️ فشل تنزيل سورة "${surahName || ''}"${detail}. تحقق من الاتصال وأعد المحاولة.</div>`;
       }
-      oqUpdateDownloadBadge();
+      try { oqUpdateDownloadBadge(); } catch {}
     },
     // onComplete
     ({ total }) => {
@@ -468,9 +569,45 @@ async function oqStartDownload() {
   );
 }
 
+/** Reinstall: wipe Quran offline data and start fresh (fixes corrupt/partial DB) */
+async function oqReinstall() {
+  try { oqCancelDownload(); } catch {}
+  _oqDownloading = false;
+  _oqCancelFlag = false;
+  try { if (_oqDb) { try { _oqDb.close(); } catch {} } } catch {}
+  _oqDb = null;
+  const infoEl = document.getElementById('oqModalInfo');
+  if (infoEl) infoEl.innerHTML = '<div class="oq-info-row oq-hint">🗑 جاري حذف البيانات القديمة...</div>';
+  _oqShowProgress(false);
+  try {
+    if (typeof indexedDB !== 'undefined' && indexedDB.deleteDatabase) {
+      await new Promise((res) => {
+        const del = indexedDB.deleteDatabase(OQ_DB_NAME);
+        del.onsuccess = () => res();
+        del.onerror = () => res();
+        del.onblocked = () => res();
+        setTimeout(res, 3000);
+      });
+    }
+  } catch {}
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.indexOf('tasmi3_api_surah_') === 0 || k.indexOf('tasmi3_oq_fallback_') === 0)) keys.push(k);
+    }
+    keys.forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  } catch {}
+  try { await oqUpdateDownloadBadge(); } catch {}
+  if (typeof showToast === 'function') showToast('🗑 تم الحذف — يبدأ التنزيل من جديد');
+  await oqOpenModal();
+  await oqStartDownload();
+}
+
 /** Cancel ongoing download */
 function oqUserCancel() {
-  oqCancelDownload();
+  try { oqCancelDownload(); } catch {}
+  _oqDownloading = false;
   const btnStart  = document.getElementById('oqBtnStart');
   const btnCancel = document.getElementById('oqBtnCancel');
   const btnClose  = document.getElementById('oqBtnClose');
@@ -544,6 +681,7 @@ window.oqOpenModal = oqOpenModal;
 window.oqCloseModal = oqCloseModal;
 window.oqStartDownload = oqStartDownload;
 window.oqUserCancel = oqUserCancel;
+window.oqReinstall = oqReinstall;
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Update badge with current download count

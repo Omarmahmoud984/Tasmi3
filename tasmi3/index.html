@@ -338,13 +338,13 @@
   <!-- ══════════════════════════════════════════
        Offline Quran Download Modal
        ══════════════════════════════════════════ -->
-  <div class="oq-modal-overlay" id="oqModal" onclick="if(event.target===this) oqCloseModal()">
+  <div class="oq-modal-overlay" id="oqModal" onclick="if(event.target===this) oqCloseModal(true)">
     <div class="oq-modal-card">
 
       <!-- Header -->
       <div class="oq-modal-header">
         <div class="oq-modal-title">📥 تنزيل القرآن الكريم</div>
-        <button class="oq-modal-close-btn" id="oqBtnClose" onclick="oqCloseModal()">×</button>
+        <button class="oq-modal-close-btn" id="oqBtnClose" onclick="oqCloseModal(true)">×</button>
       </div>
 
       <!-- Info area (dynamic content) -->
@@ -370,8 +370,13 @@
         <button class="oq-btn oq-btn--cancel" id="oqBtnCancel" onclick="oqUserCancel()" style="display:none;">
           ⏹ إيقاف
         </button>
-        <button class="oq-btn oq-btn--secondary" id="oqBtnClose2" onclick="oqCloseModal()">
+        <button class="oq-btn oq-btn--secondary" id="oqBtnClose2" onclick="oqCloseModal(true)">
           إغلاق
+        </button>
+      </div>
+      <div class="oq-btn-row">
+        <button class="oq-btn oq-btn--danger" id="oqBtnReinstall" onclick="oqReinstall()" style="flex:1;">
+          🗑 حذف وإعادة التنزيل
         </button>
       </div>
 
