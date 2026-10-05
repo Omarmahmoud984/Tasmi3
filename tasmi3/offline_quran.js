@@ -349,48 +349,56 @@ async function oqUpdateDownloadBadge() {
   } catch { /* ignore */ }
 }
 
-/** Open the confirmation modal */
+/** Open the confirmation modal — opens instantly, then fills status (never dead-clicks) */
 async function oqOpenModal() {
   const modal = document.getElementById('oqModal');
   if (!modal) return;
 
-  const count = await oqCountSurahs();
-  const resumePoint = await (async () => {
-    try { return await oqGetMeta ? (await oqGetMeta(OQ_RESUME_KEY) || 0) : 0; }
-    catch { return 0; }
-  })();
-
+  // Open FIRST so slow/blocked IndexedDB can never leave the user with nothing
   const infoEl = document.getElementById('oqModalInfo');
+  if (infoEl) infoEl.innerHTML = '<div class="oq-info-row oq-hint">جاري فحص البيانات المحفوظة...</div>';
+  _oqShowProgress(false);
+  modal.classList.add('oq-modal--open');
+  document.body.style.overflow = 'hidden';
+
+  let count = 0;
+  let resumePoint = 0;
+  let storageError = false;
+  try {
+    count = await oqCountSurahs();
+  } catch { storageError = true; }
+  try {
+    resumePoint = (typeof oqGetMeta === 'function') ? ((await oqGetMeta(OQ_RESUME_KEY)) || 0) : 0;
+  } catch { storageError = true; }
+
+  const btnStart = document.getElementById('oqBtnStart');
+  const btnCancel = document.getElementById('oqBtnCancel');
+  if (btnCancel) btnCancel.style.display = 'none';
+
   if (infoEl) {
-    if (count >= OQ_TOTAL) {
+    if (storageError) {
+      infoEl.innerHTML = `
+        <div class="oq-info-row oq-error">⚠️ تعذر الوصول إلى التخزين المحلي (IndexedDB). تحقق من وضع التصفح الخاص ثم أعد المحاولة.</div>
+        <div class="oq-info-row oq-hint">يمكنك المحاولة مجدداً — لن تفقد أي بيانات.</div>`;
+      if (btnStart) { btnStart.textContent = '↺ إعادة المحاولة'; btnStart.style.display = ''; }
+    } else if (count >= OQ_TOTAL) {
       infoEl.innerHTML = `
         <div class="oq-info-row oq-done-row">✅ القرآن الكريم محفوظ بالكامل على جهازك (${OQ_TOTAL} سورة)</div>
-        <div class="oq-info-row">يمكنك حذف البيانات وإعادة التنزيل في أي وقت.</div>`;
-      document.getElementById('oqBtnStart').style.display = 'none';
-      document.getElementById('oqBtnReset').style.display = '';
+        <div class="oq-info-row">يمكنك حذف البيانات وإعادة التنزيل من صفحة إدارة التفاسير.</div>`;
+      if (btnStart) btnStart.style.display = 'none';
     } else if (count > 0 || resumePoint > 0) {
       const done = Math.max(count, resumePoint);
       infoEl.innerHTML = `
         <div class="oq-info-row">📦 تم تحميل <b>${done}</b> سورة من ${OQ_TOTAL}</div>
-        <div class="oq-info-row oq-hint">سيتم الاستكمال من حيث توقفت تلقائياً.</div>
-        <div class="oq-info-row oq-size">المساحة المخزَّنة: ~٢–٣ ميجابايت (نص عربي مع التشكيل)</div>`;
-      document.getElementById('oqBtnStart').textContent = '▶ استكمال التنزيل';
-      document.getElementById('oqBtnStart').style.display = '';
+        <div class="oq-info-row oq-hint">سيتم الاستكمال من حيث توقفت تلقائياً.</div>`;
+      if (btnStart) { btnStart.textContent = '▶ استكمال التنزيل'; btnStart.style.display = ''; }
     } else {
       infoEl.innerHTML = `
         <div class="oq-info-row">📖 تنزيل النص الكامل للقرآن الكريم (١١٤ سورة) على جهازك</div>
-        <div class="oq-info-row oq-size">المساحة المخزَّنة: ~٢–٣ ميجابايت | يُنزَّل تدريجياً</div>
         <div class="oq-info-row oq-hint">بعد التنزيل، يعمل التطبيق بالكامل بدون إنترنت ✈️</div>`;
-      document.getElementById('oqBtnStart').textContent = '⬇ ابدأ التنزيل';
-      document.getElementById('oqBtnStart').style.display = '';
+      if (btnStart) { btnStart.textContent = '⬇ ابدأ التنزيل'; btnStart.style.display = ''; }
     }
   }
-
-  // Hide progress section by default
-  _oqShowProgress(false);
-
-  modal.classList.add('oq-modal--open');
-  document.body.style.overflow = 'hidden';
 }
 
 /** Close the download modal */
@@ -531,16 +539,16 @@ function oqPatchLoadSurah() {
 // 7. Init: run on page load
 // ══════════════════════════════════════════════════════════
 
+// Expose immediately so inline onclick works even before DOMContentLoaded
+window.oqOpenModal = oqOpenModal;
+window.oqCloseModal = oqCloseModal;
+window.oqStartDownload = oqStartDownload;
+window.oqUserCancel = oqUserCancel;
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Update badge with current download count
-  await oqUpdateDownloadBadge();
+  try { await oqUpdateDownloadBadge(); } catch { /* IDB blocked — badge stays empty */ }
 
   // Patch loadSurah to prefer IndexedDB
-  oqPatchLoadSurah();
-
-  // Expose modal functions globally for onclick attributes
-  window.oqOpenModal    = oqOpenModal;
-  window.oqCloseModal   = oqCloseModal;
-  window.oqStartDownload = oqStartDownload;
-  window.oqUserCancel   = oqUserCancel;
+  try { oqPatchLoadSurah(); } catch { /* ignore */ }
 });

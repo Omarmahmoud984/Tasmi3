@@ -60,7 +60,7 @@
         onclick="installApp()">📲 تثبيت / تحديث التطبيق</button>
 
       <!-- Offline Download Button -->
-      <button class="oq-nav-btn" onclick="oqOpenModal(); toggleNavSidebar();">
+      <button class="oq-nav-btn" onclick="toggleNavSidebar(); setTimeout(function(){ if(window.oqOpenModal){ window.oqOpenModal().catch(function(e){ console.error('[oqOpenModal]', e); }); } }, 60);">
         <span>📥 تنزيل القرآن أوفلاين</span>
         <span id="oqDownloadBadge" class="oq-badge"></span>
       </button>
