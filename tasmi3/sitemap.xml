@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://tasmi3.vercel.app/</loc>
+    <lastmod>2026-11-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/mos7af.html</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/search.html</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/adhkar.html</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/hadeeth.html</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/tasbeeh.html</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://tasmi3.vercel.app/info.html</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>

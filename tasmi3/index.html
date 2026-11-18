@@ -7,7 +7,80 @@
   <!-- Prevent browser force-dark from overriding our theme -->
   <meta name="color-scheme" content="light dark">
   <meta name="supported-color-schemes" content="light dark">
-  <title>tasmi3 — تسميع</title>
+
+  <!-- ═══ SEO ═══ -->
+  <title>Tasmi3 – Quran Memorization, Revision &amp; Recitation Practice</title>
+  <meta name="description"
+    content="Tasmi3 (تسميع) — free Quran memorization, revision and recitation practice app. Test yourself word by word, listen to 12 reciters, and study tafsir offline.">
+  <meta name="keywords"
+    content="Tasmi3, Tasmi3 Quran, Quran memorization, Quran revision, online Quran memorization, Quran recitation practice, hifz, Quran tafsir">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="googlebot" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://tasmi3.vercel.app/">
+  <meta name="theme-color" content="#d4a853">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Tasmi3">
+  <meta property="og:title" content="Tasmi3 – Quran Memorization, Revision &amp; Recitation Practice">
+  <meta property="og:description"
+    content="Tasmi3 (تسميع) — free Quran memorization, revision and recitation practice app. Test yourself word by word, listen to 12 reciters, and study tafsir offline.">
+  <meta property="og:url" content="https://tasmi3.vercel.app/">
+  <meta property="og:locale" content="ar_AR">
+  <meta property="og:image" content="https://tasmi3.vercel.app/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Tasmi3 (تسميع) — Quran memorization and revision app">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tasmi3 – Quran Memorization, Revision &amp; Recitation Practice">
+  <meta name="twitter:description"
+    content="Tasmi3 (تسميع) — free Quran memorization, revision and recitation practice app. Test yourself word by word, listen to 12 reciters, and study tafsir offline.">
+  <meta name="twitter:image" content="https://tasmi3.vercel.app/og-image.png">
+  <meta name="twitter:image:alt" content="Tasmi3 (تسميع) — Quran memorization and revision app">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://tasmi3.vercel.app/#website",
+        "url": "https://tasmi3.vercel.app/",
+        "name": "Tasmi3",
+        "alternateName": ["تسميع", "Tasmi3 Quran"],
+        "description": "Free online Quran memorization, revision and recitation practice web app with word-by-word self-testing, 12 reciters, tafsir and offline mode.",
+        "inLanguage": "ar"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://tasmi3.vercel.app/#webapp",
+        "url": "https://tasmi3.vercel.app/",
+        "name": "Tasmi3 – Quran Memorization, Revision & Recitation Practice",
+        "alternateName": "تسميع",
+        "description": "Tasmi3 (تسميع) is a free Quran memorization and revision app. Hide the words of any surah, reveal them one at a time while you recite, listen to 12 reciters, read tafsir, and download all 114 surahs for offline use.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Installable as a PWA and usable offline after downloading surahs.",
+        "inLanguage": "ar",
+        "isAccessibleForFree": true,
+        "featureList": [
+          "Word-by-word Quran memorization self-test",
+          "Reveal the next ayah or N words at a time",
+          "Listening with 12 reciters",
+          "Tafsir per ayah",
+          "Full Quran offline download (114 surahs)",
+          "Quran text search",
+          "Installable PWA with dark mode"
+        ]
+      }
+    ]
+  }
+  </script>
   <!-- Apply theme class BEFORE paint to prevent flash of wrong theme -->
   <script>
     (function () {
@@ -19,6 +92,8 @@
       }
     })();
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"
     rel="stylesheet">
@@ -265,7 +340,16 @@
 
 
   <!-- Main Content -->
-  <div class="page-container" id="pageContainer">
+  <main class="page-container" id="pageContainer">
+    <h1
+      style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;">
+      تسميع <span lang="en" dir="ltr">(Tasmi3) — Quran Memorization, Revision &amp; Recitation Practice</span>
+    </h1>
+    <p
+      style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;">
+      تطبيق تسميع (Tasmi3) أداة مجانية لمتابعة حفظ القرآن الكريم ومراجعته وتسميعه: اكشف الكلمات كلمة بكلمة،
+      استمع إلى ١٢ قارئاً، واقرأ التفسير، ونزّل القرآن كاملاً للعمل دون إنترنت.
+    </p>
     <div style="text-align: center; margin-bottom: 20px;">
       <button id="btnPlayWholeSurah" onclick="playWholeSurah()"
         style="display: none; margin: 0 auto; background: rgba(212, 168, 83, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);">▶
@@ -273,7 +357,13 @@
     </div>
     <div class="bismillah" id="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
     <div id="ayahsContainer"></div>
-  </div>
+    <noscript>
+      <p style="text-align:center;padding:16px;font-family:'Cairo',sans-serif;">
+        يعمل تطبيق تسميع (Tasmi3) باستخدام JavaScript لعرض الآيات وإخفاء الكلمات — يرجى تفعيله.
+        Tasmi3 is a free Quran memorization, revision and recitation practice web app.
+      </p>
+    </noscript>
+  </main>
 
 
 
