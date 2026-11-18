@@ -239,6 +239,7 @@ let _lastInteractedAyah = 0;
 
 function _setInteraction(idx) {
   _lastInteractedAyah = parseInt(idx);
+  _queueSaveLastPosition(_lastInteractedAyah, 800);
 }
 
 function saveRevealedState() {
@@ -282,6 +283,151 @@ function showToast(msg) {
   el.textContent = msg;
   container.appendChild(el);
   setTimeout(() => el.remove(), 8000);
+}
+
+// ══════════════════════════════════════════════════════════
+// BOOKMARKS & RESUME — local only (no account, no sync)
+// ══════════════════════════════════════════════════════════
+let _lastPosTimer = null;
+let _currentVisibleAyah = 0;
+let _visibleScrollTimer = null;
+let _posTrackingEnabled = false;
+
+function _surahNameFor(id) {
+  let raw = '';
+  if (SURAHS[id] && SURAHS[id].name) raw = SURAHS[id].name;
+  else {
+    const opt = document.querySelector(`#surahSelect option[value="${id}"]`);
+    if (opt && opt.text) raw = opt.text;
+    else raw = (window.Tasmi3BK && Tasmi3BK.surahName) ? Tasmi3BK.surahName(id) : ('سورة ' + id);
+  }
+  return (window.Tasmi3BK && Tasmi3BK.cleanArabic) ? (Tasmi3BK.cleanArabic(raw) || raw) : raw;
+}
+
+function saveLastPosition(ayahIdx) {
+  if (!window.Tasmi3BK || !SURAHS[currentSurah]) return;
+  const idx = parseInt(ayahIdx, 10);
+  if (isNaN(idx) || idx < 0) return;
+  Tasmi3BK.setLast('tasmi3', {
+    surah: currentSurah,
+    ayah: idx + 1,
+    at: Date.now()
+  });
+}
+
+function _queueSaveLastPosition(ayahIdx, delay) {
+  if (_lastPosTimer) clearTimeout(_lastPosTimer);
+  _lastPosTimer = setTimeout(() => {
+    _lastPosTimer = null;
+    saveLastPosition(ayahIdx);
+  }, delay || 700);
+}
+
+// Top-most ayah currently visible → that is where the user "stopped"
+function _trackVisibleAyah() {
+  if (isMushafMode || !SURAHS[currentSurah]) return;
+  const blocks = document.querySelectorAll('#ayahsContainer .ayah-block');
+  if (!blocks.length) return;
+
+  let pick = null;
+  for (let i = 0; i < blocks.length; i++) {
+    const rect = blocks[i].getBoundingClientRect();
+    if (rect.bottom > 120) { pick = blocks[i]; break; }
+  }
+  if (!pick) pick = blocks[blocks.length - 1];
+
+  const idx = parseInt(pick.dataset.ayahIdx, 10);
+  if (isNaN(idx)) return;
+  _currentVisibleAyah = idx;
+  saveLastPosition(idx);
+}
+
+function _flushLastPosition() {
+  if (_lastPosTimer) { clearTimeout(_lastPosTimer); _lastPosTimer = null; }
+  const idx = _currentVisibleAyah > 0 ? _currentVisibleAyah : _lastInteractedAyah;
+  saveLastPosition(idx);
+}
+
+// ── Resume bar ──
+function _scrollToAyahWithGlow(idx, attempt) {
+  attempt = attempt || 0;
+  _ensureAyahsLoadedUpTo(idx);
+  const block = document.querySelector(`.ayah-block[data-ayah-idx="${idx}"]`);
+  if (!block) {
+    if (attempt < 12) setTimeout(() => _scrollToAyahWithGlow(idx, attempt + 1), 160);
+    return;
+  }
+  block.classList.add('search-glow');
+  block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => block.classList.remove('search-glow'), 2600);
+}
+
+function _maybeShowResumeBar() {
+  const bar = document.getElementById('resumeBar');
+  if (!bar || !window.Tasmi3BK) return;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('surah') || params.get('ayah')) return; // explicit link wins
+  try {
+    if (sessionStorage.getItem('tasmi3_resume_dismissed') === '1') return;
+  } catch (e) { }
+
+  const last = Tasmi3BK.getLast('tasmi3');
+  if (!last || !last.surah || !last.ayah) return;
+
+  const whereEl = document.getElementById('resumeWhere');
+  const whenEl = document.getElementById('resumeWhen');
+  if (whereEl) {
+    whereEl.textContent = _surahNameFor(last.surah) + ' — الآية ' + Tasmi3BK.toArabicDigits(last.ayah);
+  }
+  if (whenEl) whenEl.textContent = Tasmi3BK.formatStamp(last.at);
+  bar.hidden = false;
+}
+
+function dismissResumeBar(silent) {
+  const bar = document.getElementById('resumeBar');
+  if (bar) bar.hidden = true;
+  if (!silent) {
+    try { sessionStorage.setItem('tasmi3_resume_dismissed', '1'); } catch (e) { }
+  }
+}
+
+function resumeLastPosition() {
+  if (!window.Tasmi3BK) return;
+  const last = Tasmi3BK.getLast('tasmi3');
+  if (!last || !last.surah) return;
+
+  dismissResumeBar(true);
+  const idx = Math.max(0, (parseInt(last.ayah, 10) || 1) - 1);
+
+  if (isMushafMode) toggleMushafMode();
+
+  if (parseInt(last.surah, 10) !== currentSurah || !SURAHS[currentSurah]) {
+    const sel = document.getElementById('surahSelect');
+    if (sel) sel.value = last.surah;
+    loadSurah(last.surah).then(() => _scrollToAyahWithGlow(idx));
+  } else {
+    _scrollToAyahWithGlow(idx);
+  }
+}
+
+// ── Per-ayah bookmark toggle (تسميع) ──
+function toggleAyahBookmark(idx, iconEl) {
+  if (!window.Tasmi3BK) return;
+  const ayah = idx + 1;
+  const res = Tasmi3BK.toggle('tasmi3', {
+    surah: currentSurah,
+    ayah: ayah,
+    surahName: _surahNameFor(currentSurah)
+  });
+
+  if (iconEl) iconEl.classList.toggle('active', res.added);
+
+  if (res.added) {
+    showToast('🔖 أُضيفت العلامة — ' + _surahNameFor(currentSurah) + '، الآية ' + Tasmi3BK.toArabicDigits(ayah));
+  } else {
+    showToast('حُذفت العلامة');
+  }
 }
 
 // ── PWA Install & Update Logic ──
@@ -536,6 +682,7 @@ function _proceedStartApp() {
         }, 150);
       }
     }
+    _maybeShowResumeBar();
   });
 }
 
@@ -1120,6 +1267,17 @@ function createAyahBlock(idx, surah, animate) {
   });
   textDiv.appendChild(verseImgIcon);
 
+  // Bookmark Icon — local only, toggles a mark for this ayah
+  const bmIcon = document.createElement('span');
+  bmIcon.className = 'tafsir-icon bookmark-icon';
+  bmIcon.textContent = '🔖';
+  bmIcon.title = 'إضافة أو إزالة علامة';
+  if (window.Tasmi3BK && Tasmi3BK.has('tasmi3', { surah: currentSurah, ayah: idx + 1 })) {
+    bmIcon.classList.add('active');
+  }
+  bmIcon.addEventListener('click', () => toggleAyahBookmark(idx, bmIcon));
+  textDiv.appendChild(bmIcon);
+
   // Sajda marker
   if (surah.sajda !== undefined && surah.sajda === idx) {
     const sajdaMark = document.createElement('span');
@@ -1391,6 +1549,18 @@ function _showMushafAyahPopup(marker, paragraph, idx) {
     overlay.remove();
   });
   popup.appendChild(imgBtn);
+
+  // Bookmark — وضع/إزالة علامة على هذه الآية
+  const bmBtn = document.createElement('button');
+  const alreadyMarked = window.Tasmi3BK && Tasmi3BK.has('tasmi3', { surah: currentSurah, ayah: idx + 1 });
+  bmBtn.textContent = alreadyMarked ? '🔖 إزالة العلامة' : '🔖 وضع علامة';
+  bmBtn.title = 'علامة على هذه الآية';
+  bmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleAyahBookmark(idx, null);
+    overlay.remove();
+  });
+  popup.appendChild(bmBtn);
 
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
@@ -1882,3 +2052,19 @@ if (savedTheme === 'dark') {
 } else {
   setTheme('light'); // default is now light
 }
+
+// ══════════════════════════════════════════════════════════
+// POSITION TRACKING LISTENERS (local only)
+// ══════════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  if (_visibleScrollTimer) return;
+  _visibleScrollTimer = setTimeout(() => {
+    _visibleScrollTimer = null;
+    _trackVisibleAyah();
+  }, 220);
+}, { passive: true });
+
+window.addEventListener('pagehide', _flushLastPosition);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') _flushLastPosition();
+});

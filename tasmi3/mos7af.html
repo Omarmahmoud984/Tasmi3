@@ -23,11 +23,18 @@
 </head>
 <body class="mos7af-body">
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- Header -->
   <div class="mos7af-header">
      <button class="btn-back" onclick="window.location.href='index.html'">الرئيسية ➔</button>
-     <div class="mos7af-title">المصحف الشريف</div>
-     <button class="btn-settings" onclick="toggleSidebar()">⚙️</button>
+     <div class="mos7af-title">المصحف الشريف <span class="mode-chip">قراءة</span></div>
+     <div class="mos7af-header-actions">
+       <button class="btn-bm" id="btnMos7afBookmark" onclick="toggleBookmarkCurrent()"
+               title="علامة على الموضع الحالي" aria-label="علامة على الموضع الحالي">🔖</button>
+       <button class="btn-settings" onclick="toggleSidebar()">⚙️</button>
+     </div>
   </div>
 
   <!-- Sidebar Overlay -->
@@ -72,6 +79,7 @@
     <div style="margin-top: 30px;">
       <div class="nav-links">
         <a href="index.html" class="nav-link">الرئيسية</a>
+        <a href="bookmark.html" class="nav-link">🔖 العلامات <span class="bm-nav-count" data-bm-count="read"></span></a>
         <a href="tasbeeh.html" class="nav-link">السبحة 📿</a>
         <a href="adhkar.html" class="nav-link" style="color: var(--gold);">الأذكار 📿</a>
       </div>
@@ -102,6 +110,7 @@
 
 
   <script src="quran_mapping.js"></script>
+  <script src="bookmarks.js"></script>
   <script src="mos7af.js"></script>
 
   <!-- Jump To Modal -->

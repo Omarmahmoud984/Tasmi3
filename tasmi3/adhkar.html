@@ -47,70 +47,148 @@
       margin-bottom: 16px;
     }
 
-    .dhikr-controls {
+    /* Whole card is the tap target — no floating counter circles */
+    .dhikr-card:active {
+      background: rgba(196, 154, 59, 0.07);
+    }
+
+    .dhikr-card:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .dhikr-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 8px;
       border-top: 1px solid var(--gold-line);
-      padding-top: 12px;
+      padding-top: 10px;
+      margin-top: 2px;
     }
 
-    .dhikr-count-circle {
-      display: inline-flex;
+    .dhikr-meter {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      width: 61px;
-      height: 61px;
-      border-radius: 50%;
-      background: var(--gold-dim);
-      border: 2px solid var(--gold);
-      color: var(--gold);
-      font-size: 1.5rem;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.2s;
+      gap: 9px;
+      flex: 1;
+      min-width: 0;
     }
 
-    .dhikr-count-circle:active {
-      transform: scale(0.9);
+    .dhikr-bar {
+      flex: 1;
+      min-width: 40px;
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(128, 128, 128, 0.22);
+      overflow: hidden;
     }
 
-    .dhikr-count-circle.finished {
+    .dhikr-bar-fill {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--gold), var(--gold2));
+      transition: width 0.25s ease;
+    }
+
+    .dhikr-card.completed .dhikr-bar-fill {
       background: var(--green2);
-      border-color: var(--green);
-      color: white;
+    }
+
+    .dhikr-pill {
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.8;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      border-radius: 10px;
+      padding: 1px 9px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dhikr-pill.done {
+      color: #5ecf8a;
+      background: rgba(42, 180, 100, 0.14);
+      border-color: rgba(42, 180, 100, 0.4);
+    }
+
+    .theme-light .dhikr-pill.done {
+      color: #177a4a;
+      background: rgba(42, 180, 100, 0.12);
+      border-color: rgba(23, 122, 74, 0.32);
+    }
+
+    .dhikr-pill.pop {
+      animation: pillPop 0.18s ease;
+    }
+
+    @keyframes pillPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
     }
 
     .dhikr-info-icon {
-      font-size: 1.4rem;
-      color: var(--text2);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .dhikr-info-icon:hover {
-      color: var(--blue2);
-      transform: scale(1.1);
-    }
-
-    .dhikr-expand-btn {
-      background: none;
-      border: none;
-      color: var(--gold);
-      font-size: 1.2rem;
-      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 0;
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dhikr-info-icon:hover {
+      color: var(--gold);
+      background: var(--gold-dim);
+      border-color: var(--gold-line);
+    }
+
+    .dhikr-expand-btn {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 0;
+      color: var(--gold);
+      font-size: 0.85rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dhikr-expand-btn:hover {
+      background: var(--gold-dim);
+      border-color: var(--gold-line);
+    }
+
+    .dhikr-expand-btn.open {
+      transform: rotate(180deg);
     }
 
     .sub-dhikr-container {
       display: none;
-      margin-top: 15px;
-      padding-top: 15px;
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px dashed var(--gold-line);
     }
 
@@ -120,38 +198,53 @@
 
     .sub-dhikr-item {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      margin-bottom: 9px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: rgba(128, 128, 128, 0.05);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .sub-dhikr-item:last-child {
       margin-bottom: 0;
     }
 
-    .sub-dhikr-text {
-      font-size: 1.05rem;
-      /* Zoomed out from 1.2rem */
-      font-family: 'Cairo', sans-serif;
-      color: var(--text);
-      flex: 1;
-      /* allow text to breathe and push container slightly */
-      padding-left: 10px;
+    .sub-dhikr-item:hover {
+      border-color: var(--gold-line);
     }
 
-    .sub-circle {
-      width: 54px;
-      height: 54px;
-      font-size: 1.37rem;
+    .sub-dhikr-item:active {
+      background: var(--gold-dim);
+    }
+
+    .sub-dhikr-item:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .sub-dhikr-item.finished {
+      opacity: 0.72;
+    }
+
+    .sub-dhikr-text {
+      font-size: 1.05rem;
+      font-family: 'Cairo', sans-serif;
+      color: var(--text);
+      line-height: 1.7;
     }
 
     /* ── Share Card (bottom of adhkar list) ── */
     .adhkar-share-card {
       margin-top: 8px;
-      padding: 22px 20px;
+      padding: 20px 18px;
       border-radius: var(--radius);
       border: 1px dashed var(--gold-line);
-      background: linear-gradient(135deg, rgba(212, 168, 83, 0.05), rgba(212, 168, 83, 0.02));
+      background: transparent;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -166,9 +259,11 @@
       letter-spacing: 0.5px;
     }
 
-    .adhkar-share-btn {
+    .adhkar-share-btn,
+    .adhkar-download-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       background: var(--gold-dim);
       border: 1px solid var(--gold-line);
@@ -176,65 +271,121 @@
       font-family: 'Cairo', sans-serif;
       font-size: 0.95rem;
       font-weight: 700;
-      padding: 10px 28px;
+      padding: 11px 24px;
+      min-height: 44px;
       border-radius: 30px;
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
       letter-spacing: 0.3px;
+      -webkit-tap-highlight-color: transparent;
+      width: 100%;
+      max-width: 320px;
+      margin-inline: auto;
     }
 
-    .adhkar-share-btn:hover {
-      background: rgba(212, 168, 83, 0.28);
+    .adhkar-share-btn:hover,
+    .adhkar-download-btn:hover {
+      background: var(--gold-dim);
       border-color: var(--gold);
-      transform: scale(1.04);
-      box-shadow: 0 4px 18px rgba(212, 168, 83, 0.18);
+      transform: scale(1.02);
+      box-shadow: 0 4px 18px rgba(128, 128, 128, 0.14);
     }
 
-    .adhkar-share-btn:active {
-      transform: scale(0.96);
+    .adhkar-share-btn:active,
+    .adhkar-download-btn:active {
+      transform: scale(0.97);
+    }
+
+    .adhkar-share-btn:focus-visible,
+    .adhkar-download-btn:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
     }
 
     .adhkar-share-btn.copied {
       background: rgba(42, 180, 100, 0.15);
-      border-color: rgba(42, 180, 100, 0.4);
+      border-color: rgba(42, 180, 100, 0.45);
       color: #5ecf8a;
       transform: scale(1);
-      box-shadow: 0 4px 18px rgba(42, 180, 100, 0.12);
+      box-shadow: none;
     }
+
+    .theme-light .adhkar-share-btn.copied {
+      color: #177a4a;
+    }
+
     .adhkar-download-wrap {
       text-align: center;
       margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
     }
-
-    .adhkar-download-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--gold-dim);
-      border: 1px solid var(--gold-line);
-      color: var(--gold);
-      font-family: 'Cairo', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-      padding: 10px 32px;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .adhkar-download-btn:hover {
-      background: rgba(212,168,83,0.28);
-      border-color: var(--gold);
-      transform: scale(1.04);
-      box-shadow: 0 4px 18px rgba(212,168,83,0.18);
-    }
-
-    .adhkar-download-btn:active { transform: scale(0.96); }
 
     .adhkar-download-btn:disabled {
       opacity: 0.55;
       cursor: not-allowed;
       transform: none;
+    }
+
+    /* Tabs — scroll instead of squeezing on narrow phones */
+    .adhkar-container .tabs-header {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .adhkar-container .tabs-header::-webkit-scrollbar {
+      display: none;
+    }
+
+    .adhkar-container .tab-btn {
+      min-width: 84px;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Narrow phones: keep the header on one line ── */
+    @media (max-width: 480px) {
+      .adhkar-header {
+        padding: 8px 10px !important;
+        gap: 6px;
+      }
+
+      .adhkar-header > div {
+        gap: 8px !important;
+        min-width: 0;
+      }
+
+      .adhkar-header .btn-nav {
+        font-size: 0.82rem !important;
+        padding: 6px 9px !important;
+        min-height: 36px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .adhkar-header h1 {
+        font-size: 1rem !important;
+        white-space: nowrap;
+      }
+
+      .adhkar-header .theme-toggle button {
+        width: 34px;
+        height: 34px;
+        font-size: 0.9rem;
+        padding: 0;
+      }
+
+      .adhkar-header #btnNav {
+        width: 38px;
+        height: 34px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
@@ -250,6 +401,7 @@
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">الرئيسية</a>
+      <a href="bookmark.html" class="nav-link">🔖 العلامات <span class="bm-nav-count" data-bm-count="tasmi3"></span></a>
       <a href="search.html" class="nav-link">🔍 البحث في القرآن</a>
       <a href="info.html" class="nav-link">ℹ️ Info</a>
       <a href="adhkar.html" class="nav-link active" style="color: var(--gold);">الأذكار 📿</a>
@@ -269,7 +421,7 @@
     </div>
   </div>
 
-  <header style="flex-direction: row; justify-content: space-between; padding: 12px 20px;">
+  <header class="adhkar-header" style="flex-direction: row; justify-content: space-between; padding: 12px 20px;">
     <div style="display: flex; align-items: center; gap: 15px;">
       <button class="btn-nav" onclick="window.location.href='index.html'" style="font-size: 1.2rem;">← رجوع</button>
       <h1 style="color: var(--gold); font-family: 'Cairo'; margin: 0; font-size: 1.3rem;">الأذكار 📿</h1>
@@ -386,6 +538,7 @@
       }
     })();
   </script>
+  <script src="bookmarks.js"></script>
 </body>
 
 </html>

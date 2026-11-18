@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>العلامات — تسميع</title>
+  <meta name="description" content="علاماتك المحفوظة محلياً على هذا الجهاز — وضع التسميع ووضع القراءة.">
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#d4a853">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+
+  <script>
+    (function () {
+      var theme = localStorage.getItem('tasmi3_theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('theme-dark-early', 'theme-dark');
+      } else {
+        document.documentElement.classList.add('theme-light-early', 'theme-light');
+      }
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    .bm-container {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 18px 16px 70px;
+      width: 100%;
+    }
+
+    .bm-tabs {
+      display: flex;
+      border: 1px solid var(--gold-line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 18px;
+      background: var(--surface);
+    }
+
+    .bm-tabs .tab-btn {
+      flex: 1;
+      min-height: 48px;
+      white-space: nowrap;
+      font-size: 1rem;
+    }
+
+    .bm-tabs .tab-count {
+      display: inline-block;
+      min-width: 20px;
+      margin-inline-start: 4px;
+      font-size: 0.75em;
+      color: var(--text2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bm-tabs .tab-btn.active .tab-count {
+      color: var(--gold);
+    }
+
+    /* Last position card */
+    .bm-last {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border: 1px solid var(--gold-line);
+      background: var(--gold-dim);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+
+    .bm-last[hidden] {
+      display: none;
+    }
+
+    .bm-last-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .bm-last-title {
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .bm-last-when {
+      font-size: 0.78rem;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    .bm-last-go {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 20px;
+      padding: 7px 18px;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .bm-last-go:hover {
+      background: var(--gold);
+      color: var(--bg2);
+    }
+
+    /* Day groups */
+    .bm-group {
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text2);
+      letter-spacing: 0.4px;
+      margin: 18px 0 8px;
+      padding-inline-start: 4px;
+    }
+
+    .bm-group:first-child {
+      margin-top: 0;
+    }
+
+    /* Rows */
+    .bm-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      margin-bottom: 9px;
+      border: 1px solid var(--gold-line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .bm-row:hover {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    .bm-row:active {
+      transform: scale(0.99);
+    }
+
+    .bm-row:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .bm-row-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bm-row-title {
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .bm-row-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    /* Small grey mode chip — never gold */
+    .bm-chip {
+      font-family: 'Cairo', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text2);
+      background: rgba(128, 128, 128, 0.16);
+      border: 1px solid rgba(128, 128, 128, 0.3);
+      border-radius: 10px;
+      padding: 2px 8px;
+      line-height: 1.6;
+    }
+
+    .theme-light .bm-chip {
+      background: rgba(0, 0, 0, 0.06);
+      border-color: rgba(0, 0, 0, 0.14);
+    }
+
+    .bm-date {
+      font-size: 0.78rem;
+      color: var(--text2);
+    }
+
+    .bm-del {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text2);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 8px 9px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .bm-del:hover {
+      color: #d9534f;
+      border-color: rgba(217, 83, 79, 0.45);
+      background: rgba(217, 83, 79, 0.08);
+    }
+
+    /* Empty state */
+    .bm-empty {
+      text-align: center;
+      padding: 46px 18px;
+      color: var(--text2);
+      font-family: 'Cairo', sans-serif;
+      line-height: 1.9;
+    }
+
+    .bm-empty-icon {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 12px;
+      opacity: 0.65;
+    }
+
+    .bm-empty-hint {
+      display: block;
+      font-size: 0.82rem;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+
+    .bm-note {
+      margin-top: 26px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text2);
+      opacity: 0.75;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 480px) {
+      .bm-tabs .tab-btn {
+        font-size: 0.9rem;
+        min-height: 44px;
+        padding: 8px 6px;
+      }
+
+      .bm-row-title {
+        font-size: 0.92rem;
+      }
+
+      /* Keep the header on a single line on narrow phones */
+      body > header {
+        padding: 8px 10px !important;
+        gap: 6px;
+        flex-wrap: nowrap !important;
+        align-items: center;
+      }
+
+      body > header > div:first-child {
+        gap: 8px !important;
+      }
+
+      #btnBack {
+        font-size: 0.78rem !important;
+        padding: 6px 8px !important;
+        min-height: 34px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      body > header h1 {
+        font-size: 1rem !important;
+        gap: 6px !important;
+        white-space: nowrap;
+        min-width: 0;
+      }
+
+      body > header h1 .mode-chip {
+        font-size: 0.56rem;
+        padding: 0 5px;
+      }
+
+      body > header .theme-toggle {
+        flex-shrink: 0;
+        gap: 0;
+      }
+
+      body > header .theme-toggle button {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header style="flex-direction: row; justify-content: space-between; padding: 12px 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+      <button class="btn-nav" id="btnBack" style="font-size: 1.2rem;">← رجوع</button>
+      <h1 style="color: var(--gold); font-family: 'Cairo', sans-serif; margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+        <span>🔖 العلامات</span>
+        <span class="mode-chip" id="modeChip">تسميع</span>
+      </h1>
+    </div>
+    <div class="theme-toggle" style="margin: 0;">
+      <button id="btnThemeDark" onclick="setBmTheme('dark')">🌙</button>
+      <button id="btnThemeLight" onclick="setBmTheme('light')">☀️</button>
+    </div>
+  </header>
+
+  <div class="bm-container">
+
+    <div class="bm-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tasmi3" role="tab" aria-selected="true"
+        onclick="switchBmTab('tasmi3')">التسميع <span class="tab-count" id="tabCountTasmi3"></span></button>
+      <button class="tab-btn" data-tab="read" role="tab" aria-selected="false"
+        onclick="switchBmTab('read')">القراءة <span class="tab-count" id="tabCountRead"></span></button>
+    </div>
+
+    <div class="bm-last" id="bmLast" hidden role="button" tabindex="0">
+      <div class="bm-last-main">
+        <div class="bm-last-title" id="bmLastTitle"></div>
+        <div class="bm-last-when" id="bmLastWhen"></div>
+      </div>
+      <button class="bm-last-go" id="bmLastGo" type="button">متابعة</button>
+    </div>
+
+    <div id="bmList" class="bm-list"></div>
+
+    <div class="bm-note">العلامات محفوظة على هذا الجهاز فقط — لا حساب ولا مزامنة سحابية.</div>
+  </div>
+
+  <script src="bookmarks.js"></script>
+  <script>
+    (function () {
+      var BK = window.Tasmi3BK;
+      var TAB_LABEL = { tasmi3: 'تسميع', read: 'قراءة' };
+      var STORAGE_TAB = 'tasmi3_bookmarks_tab';
+      var activeTab = localStorage.getItem(STORAGE_TAB) || 'tasmi3';
+      if (activeTab !== 'tasmi3' && activeTab !== 'read') activeTab = 'tasmi3';
+
+      var listEl = document.getElementById('bmList');
+      var lastEl = document.getElementById('bmLast');
+
+      // ── Theme ──
+      window.setBmTheme = function (mode) {
+        var body = document.body;
+        var btnDark = document.getElementById('btnThemeDark');
+        var btnLight = document.getElementById('btnThemeLight');
+        if (mode === 'light') {
+          body.classList.add('theme-light');
+          if (btnLight) { btnLight.style.background = 'var(--gold-dim)'; btnLight.style.color = 'var(--gold)'; }
+          if (btnDark) { btnDark.style.background = 'transparent'; btnDark.style.color = 'var(--text2)'; }
+          localStorage.setItem('tasmi3_theme', 'light');
+        } else {
+          body.classList.remove('theme-light');
+          if (btnDark) { btnDark.style.background = 'var(--gold-dim)'; btnDark.style.color = 'var(--gold)'; }
+          if (btnLight) { btnLight.style.background = 'transparent'; btnLight.style.color = 'var(--text2)'; }
+          localStorage.setItem('tasmi3_theme', 'dark');
+        }
+      };
+
+      function syncThemeButtons() {
+        var isDark = (localStorage.getItem('tasmi3_theme') || 'light') === 'dark';
+        window.setBmTheme(isDark ? 'dark' : 'light');
+      }
+
+      // ── Navigation ──
+      document.getElementById('btnBack').addEventListener('click', function () {
+        if (history.length > 1) history.back();
+        else window.location.href = 'index.html';
+      });
+
+      // ── Tabs ──
+      window.switchBmTab = function (tab) {
+        if (tab !== 'tasmi3' && tab !== 'read') return;
+        activeTab = tab;
+        try { localStorage.setItem(STORAGE_TAB, tab); } catch (e) { }
+        render();
+      };
+
+      // ── Helpers ──
+      function openEntry(entry) {
+        if (!entry) return;
+        if (entry.view) {
+          window.location.href = 'mos7af.html?mode=' + encodeURIComponent(entry.view) +
+            '&index=' + encodeURIComponent(entry.index);
+        } else {
+          window.location.href = 'index.html?surah=' + encodeURIComponent(entry.surah) +
+            '&ayah=' + encodeURIComponent(entry.ayah);
+        }
+      }
+
+      function buildRow(entry) {
+        var row = document.createElement('div');
+        row.className = 'bm-row';
+        row.setAttribute('role', 'button');
+        row.tabIndex = 0;
+
+        var main = document.createElement('div');
+        main.className = 'bm-row-main';
+
+        var title = document.createElement('div');
+        title.className = 'bm-row-title';
+        title.textContent = BK.entryTitle(entry);
+
+        var sub = document.createElement('div');
+        sub.className = 'bm-row-sub';
+
+        var chip = document.createElement('span');
+        chip.className = 'bm-chip';
+        chip.textContent = TAB_LABEL[entry.mode] || TAB_LABEL[activeTab];
+
+        var date = document.createElement('span');
+        date.className = 'bm-date';
+        date.textContent = BK.formatStamp(entry.at);
+
+        sub.appendChild(chip);
+        sub.appendChild(date);
+        main.appendChild(title);
+        main.appendChild(sub);
+
+        var del = document.createElement('button');
+        del.className = 'bm-del';
+        del.type = 'button';
+        del.title = 'حذف العلامة';
+        del.setAttribute('aria-label', 'حذف العلامة');
+        del.textContent = '🗑';
+        del.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          BK.remove(entry.mode, entry.id);
+          render();
+        });
+
+        row.addEventListener('click', function () { openEntry(entry); });
+        row.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault();
+            openEntry(entry);
+          }
+        });
+
+        row.appendChild(main);
+        row.appendChild(del);
+        return row;
+      }
+
+      // ── Last position ──
+      function renderLast() {
+        var last = BK.getLast(activeTab);
+        if (!last) {
+          lastEl.hidden = true;
+          return;
+        }
+
+        var title = '';
+        if (activeTab === 'read') {
+          title = BK.readViewLabel(last.view, last.index);
+        } else if (last.surah) {
+          title = BK.surahName(last.surah) + ' — الآية ' + BK.toArabicDigits(last.ayah);
+        }
+
+        if (!title) {
+          lastEl.hidden = true;
+          return;
+        }
+
+        document.getElementById('bmLastTitle').textContent = '⟲ آخر موضع · ' + title;
+        document.getElementById('bmLastWhen').textContent = BK.formatStamp(last.at);
+        lastEl.hidden = false;
+        lastEl.onclick = function () { openEntry(last); };
+        lastEl.onkeydown = function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault();
+            openEntry(last);
+          }
+        };
+        document.getElementById('bmLastGo').onclick = function (ev) {
+          ev.stopPropagation();
+          openEntry(last);
+        };
+      }
+
+      // ── List ──
+      function renderList() {
+        listEl.innerHTML = '';
+        var items = BK.list(activeTab);
+
+        if (!items.length) {
+          var empty = document.createElement('div');
+          empty.className = 'bm-empty';
+          empty.innerHTML =
+            '<span class="bm-empty-icon">🔖</span>' +
+            'لا توجد علامات بعد' +
+            '<span class="bm-empty-hint">' +
+            (activeTab === 'read'
+              ? 'افتح المصحف واضغط 🔖 لإضافة علامة للصفحة أو الجزء أو الربع أو السورة.'
+              : 'اضغط 🔖 بجانب أي آية في صفحة التسميع لإضافة علامة.') +
+            '</span>';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        var currentGroup = null;
+        items.forEach(function (entry) {
+          var label = BK.dayLabel(entry.at);
+          if (label !== currentGroup) {
+            currentGroup = label;
+            var head = document.createElement('div');
+            head.className = 'bm-group';
+            head.textContent = label;
+            listEl.appendChild(head);
+          }
+          listEl.appendChild(buildRow(entry));
+        });
+      }
+
+      function render() {
+        document.querySelectorAll('.bm-tabs .tab-btn').forEach(function (btn) {
+          var isActive = btn.getAttribute('data-tab') === activeTab;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        document.getElementById('modeChip').textContent = TAB_LABEL[activeTab];
+        document.getElementById('tabCountTasmi3').textContent = BK.toArabicDigits(BK.count('tasmi3'));
+        document.getElementById('tabCountRead').textContent = BK.toArabicDigits(BK.count('read'));
+
+        renderLast();
+        renderList();
+      }
+
+      // ── React to changes from other pages / tabs ──
+      window.addEventListener(BK.EVENT, render);
+      window.addEventListener('storage', function (ev) {
+        if (!ev.key || ev.key.indexOf('bookmarks') !== -1) render();
+      });
+
+      syncThemeButtons();
+      render();
+    })();
+  </script>
+</body>
+
+</html>

@@ -8,6 +8,8 @@ let currentIndex = 1;
 let loadedSurahs = {};
 let chromeVisible = true;
 
+const READ_LIMITS = { page: 604, surah: 114, juz: 30, rub: 240 };
+
 const SURAH_NAMES = [
   "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
   "هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
@@ -42,6 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
   setFontSize(savedFont);
   currentMode  = savedMode;
   currentIndex = savedIndex;
+
+  // Deep link from bookmark.html → ?mode=page|surah|juz|rub&index=N
+  const params = new URLSearchParams(window.location.search);
+  const pMode  = params.get('mode');
+  const pIndex = parseInt(params.get('index'), 10);
+  if (pMode && Object.prototype.hasOwnProperty.call(READ_LIMITS, pMode) &&
+      pIndex >= 1 && pIndex <= READ_LIMITS[pMode]) {
+    currentMode  = pMode;
+    currentIndex = pIndex;
+    localStorage.setItem('mos7af_mode', pMode);
+    localStorage.setItem('mos7af_index_' + pMode, String(pIndex));
+  }
+
+  container.className = 'mos7af-container mode-' + currentMode;
 
   // Init theme toggle checkbox
   const isDark = (localStorage.getItem('tasmi3_theme') || 'light') === 'dark';
@@ -222,6 +238,10 @@ async function loadCurrentView() {
   }
 
   loadingOverlay.style.display = 'none';
+
+  // Bookmark button state + resume position (local only)
+  syncBookmarkButton();
+  saveMos7afLastPosition();
 }
 
 // ── Renderer ──
@@ -448,3 +468,82 @@ document.addEventListener('DOMContentLoaded', () => {
   cont.addEventListener('touchmove', e=>{ const t=e.touches[0]; if(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10) moved=true; }, {passive:true});
   cont.addEventListener('click', e=>{ if(moved){moved=false;return;} if(e.target.closest('.jump-modal, .sidebar')) return; if(e.target.closest('#mos7afContainer')) toggleChrome(); });
 });
+
+// ══════════════════════════════════════════════════════════
+// BOOKMARKS — reading mode (page / juz / rub / surah)
+// Marks the current *position* in the mushaf, not a single ayah.
+// ══════════════════════════════════════════════════════════
+
+function _viewStartRef(view, index) {
+  if (view === 'surah') return { surah: index, ayah: 1 };
+  if (view === 'page')  return QURAN_MAPPING.pages[index - 1] || null;
+  if (view === 'juz')   return QURAN_MAPPING.juzs[index - 1]  || null;
+  if (view === 'rub')   return QURAN_MAPPING.rubs[index - 1]  || null;
+  return null;
+}
+
+// Metadata is stored for display only (bookmark.html stays light);
+// navigation always uses view + index.
+function _currentReadEntry() {
+  const ref   = _viewStartRef(currentMode, currentIndex) || {};
+  const surah = ref.surah || (currentMode === 'surah' ? currentIndex : 1);
+  return {
+    view: currentMode,
+    index: currentIndex,
+    surah: surah,
+    ayah: ref.ayah || 1,
+    surahName: SURAH_NAMES[surah - 1] || ''
+  };
+}
+
+function showMos7afToast(msg) {
+  const box = document.getElementById('toastContainer');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+function syncBookmarkButton() {
+  const btn = document.getElementById('btnMos7afBookmark');
+  if (!btn) return;
+
+  let active = false;
+  if (window.Tasmi3BK) {
+    active = Tasmi3BK.has('read', { view: currentMode, index: currentIndex });
+  }
+  btn.classList.toggle('active', active);
+
+  const label = window.Tasmi3BK
+    ? Tasmi3BK.readViewLabel(currentMode, currentIndex)
+    : '';
+  const text = (active ? 'إزالة العلامة — ' : 'علامة على ') + label;
+  btn.title = text;
+  btn.setAttribute('aria-label', text);
+}
+
+function toggleBookmarkCurrent() {
+  if (!window.Tasmi3BK) return;
+
+  const entry = _currentReadEntry();
+  const res   = Tasmi3BK.toggle('read', entry);
+  syncBookmarkButton();
+
+  const label = Tasmi3BK.readViewLabel(entry.view, entry.index);
+  if (res.added) showMos7afToast('🔖 أُضيفت علامة القراءة — ' + label);
+  else showMos7afToast('حُذفت العلامة');
+}
+
+function saveMos7afLastPosition() {
+  if (!window.Tasmi3BK) return;
+  const entry = _currentReadEntry();
+  Tasmi3BK.setLast('read', {
+    view: entry.view,
+    index: entry.index,
+    surah: entry.surah,
+    ayah: entry.ayah,
+    at: Date.now()
+  });
+}

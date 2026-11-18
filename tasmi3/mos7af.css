@@ -408,6 +408,74 @@ body.mos7af-body {
   font-family: 'Cairo', sans-serif;
   font-size: 1.3rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* Header right cluster: bookmark + settings */
+.mos7af-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mos7af-header .btn-bm {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 7px 9px;
+  cursor: pointer;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+  transition: all 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mos7af-header .btn-bm:hover {
+  opacity: 1;
+  filter: none;
+  border-color: var(--gold-line);
+}
+
+.mos7af-header .btn-bm.active {
+  opacity: 1;
+  filter: none;
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  box-shadow: 0 0 12px rgba(196, 154, 59, 0.3);
+}
+
+@media (max-width: 480px) {
+  .mos7af-header {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .mos7af-header .btn-back {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .mos7af-title {
+    font-size: 0.98rem;
+    gap: 5px;
+  }
+
+  .mos7af-title .mode-chip {
+    font-size: 0.56rem;
+    padding: 0 5px;
+  }
+
+  .mos7af-header .btn-bm {
+    font-size: 1rem;
+    padding: 6px 7px;
+  }
 }
 
 .mos7af-header .btn-settings {

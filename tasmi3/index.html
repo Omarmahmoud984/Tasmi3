@@ -116,11 +116,15 @@
   <div class="sidebar" id="navSidebar" style="right: auto; left: 0; transform: translateX(-100%);">
     <div
       style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gold-line); padding-bottom:10px; margin-bottom:15px;">
-      <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h2 style="color:var(--gold); font-family:'Cairo'; margin:0; font-size:1.2rem;">متابعة الحفظ</h2>
+        <span class="mode-chip">تسميع</span>
+      </div>
       <button class="btn-close-sidebar" onclick="toggleNavSidebar()" style="position:static;">✕</button>
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link active">الرئيسية</a>
+      <a href="bookmark.html" class="nav-link">🔖 العلامات <span class="bm-nav-count" data-bm-count="tasmi3"></span></a>
       <a href="search.html" class="nav-link">🔍 البحث في القرآن</a>
       <a href="mos7af.html" class="nav-link">📖 المصحف الشريف</a>
       <a href="info.html" class="nav-link">ℹ️ Info</a>
@@ -350,6 +354,13 @@
       تطبيق تسميع (Tasmi3) أداة مجانية لمتابعة حفظ القرآن الكريم ومراجعته وتسميعه: اكشف الكلمات كلمة بكلمة،
       استمع إلى ١٢ قارئاً، واقرأ التفسير، ونزّل القرآن كاملاً للعمل دون إنترنت.
     </p>
+    <div id="resumeBar" class="resume-bar" hidden>
+      <span class="resume-text">⟲ توقفت عند <b id="resumeWhere"></b> · <span id="resumeWhen"></span></span>
+      <div class="resume-actions">
+        <button class="resume-btn" onclick="resumeLastPosition()">متابعة</button>
+        <button class="resume-close" onclick="dismissResumeBar()" aria-label="إغلاق">×</button>
+      </div>
+    </div>
     <div style="text-align: center; margin-bottom: 20px;">
       <button id="btnPlayWholeSurah" onclick="playWholeSurah()"
         style="display: none; margin: 0 auto; background: rgba(212, 168, 83, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);">▶
@@ -476,6 +487,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="offline_tafsir.js"></script>
+  <script src="bookmarks.js"></script>
   <script src="app.js"></script>
   <script src="verse_image.js"></script>
   <script src="offline_quran.js"></script>

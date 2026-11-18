@@ -73,6 +73,40 @@ function switchAdhkarTab(category, btnElement) {
   renderList(category);
 }
 
+// ── Helpers for the tap-to-count UI ──
+function _toAr(n) {
+  return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
+
+function _hasTextSelection() {
+  try {
+    const sel = window.getSelection && window.getSelection();
+    return !!(sel && sel.toString().trim().length);
+  } catch (e) {
+    return false;
+  }
+}
+
+function _vibrate() {
+  if (navigator.vibrate) {
+    try { navigator.vibrate(10); } catch (e) { }
+  }
+}
+
+function _pillText(remaining) {
+  return remaining <= 0 ? 'تم ✓' : 'باقي ' + _toAr(remaining);
+}
+
+function _meterHtml(id, remaining, total) {
+  const done = total > 0 ? total - remaining : 0;
+  const pct = total > 0 ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0;
+  return `
+    <div class="dhikr-meter">
+      <div class="dhikr-bar"><span class="dhikr-bar-fill" id="bar-${id}" style="width:${pct}%"></span></div>
+      <span class="dhikr-pill ${remaining <= 0 ? 'done' : ''}" id="count-${id}">${_pillText(remaining)}</span>
+    </div>`;
+}
+
 function renderList(category) {
   const container = document.getElementById('adhkarList');
   container.innerHTML = '';
@@ -80,133 +114,238 @@ function renderList(category) {
   const list = ADHIKAR_DB[category];
   if (!list) return;
 
+  const state = dhikrState[category];
+  // On phones the sub-lists start collapsed to keep the page short
+  const compact = !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches);
+
   list.forEach(item => {
-    let isFinished = false;
-    let cardHtml = '';
-
+    // ── Group of sub-dhikrs ──
     if (item.subDhikrs) {
-      let anyLeft = false;
-      let subHtml = '<div class="sub-dhikr-container show" id="subc-' + item.id + '">';
+      const total = item.subDhikrs.length;
+      let remaining = 0;
+      let subsHtml = '';
+
       item.subDhikrs.forEach(sub => {
-        const subCount = dhikrState[category][sub.id];
-        const subFin = subCount <= 0;
-        if (!subFin) anyLeft = true;
+        const left = state[sub.id];
+        if (left > 0) remaining++;
 
-        subHtml += `
-          <div class="sub-dhikr-item">
+        subsHtml += `
+          <div class="sub-dhikr-item ${left <= 0 ? 'finished' : ''}"
+               id="subrow-${sub.id}" data-parent="${item.id}" data-sub="${sub.id}"
+               role="button" tabindex="0"
+               aria-label="${left <= 0 ? 'تم' : 'باقي ' + _toAr(left) + ' من ' + _toAr(sub.count)}">
             <span class="sub-dhikr-text">${sub.text}</span>
-            <div class="dhikr-count-circle ${subFin ? 'finished' : ''} sub-circle" onclick="decrementSubCount('${item.id}', '${sub.id}')" id="count-${sub.id}">
-              ${subFin ? '\u2713' : subCount}
-            </div>
-          </div>
-        `;
+            ${_meterHtml(sub.id, left, sub.count)}
+          </div>`;
       });
-      subHtml += '</div>';
-      isFinished = !anyLeft;
 
-      cardHtml = `
-        <div class="dhikr-text">${item.text}</div>
-        <div class="dhikr-controls">
-          <span class="dhikr-info-icon" title="\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0641\u0636\u0644" onclick="openDhikrModal('${item.id}')">❓</span>
-          <button class="dhikr-expand-btn" id="expand-${item.id}" onclick="toggleSubDhikr('${item.id}')">▲</button>
-        </div>
-        ${subHtml}
-      `;
-    } else {
-      const currentCount = dhikrState[category][item.id];
-      isFinished = currentCount <= 0;
+      const isFinished = remaining === 0;
 
-      cardHtml = `
+      const card = document.createElement('div');
+      card.className = 'dhikr-card' + (isFinished ? ' completed' : '');
+      card.id = 'card-' + item.id;
+      card.dataset.dhikr = item.id;
+      card.dataset.group = '1';
+      card.setAttribute('role', 'button');
+      card.tabIndex = 0;
+      card.setAttribute('aria-label', 'مجموعة أذكار — اضغط للفتح أو الإغلاق');
+      card.innerHTML = `
         <div class="dhikr-text">${item.text}</div>
-        <div class="dhikr-controls">
-          <span class="dhikr-info-icon" title="معلومات الفضل" onclick="openDhikrModal('${item.id}')">❓</span>
-          <div class="dhikr-count-circle ${isFinished ? 'finished' : ''}" onclick="decrementCount('${item.id}')" id="count-${item.id}">
-            ${isFinished ? '✓' : currentCount}
-          </div>
+        <div class="dhikr-footer">
+          <button class="dhikr-info-icon" type="button" title="معلومات الفضل" aria-label="فضل الذكر">؟</button>
+          ${_meterHtml(item.id, remaining, total)}
+          <button class="dhikr-expand-btn ${compact ? '' : 'open'}" id="expand-${item.id}" type="button"
+                  aria-expanded="${compact ? 'false' : 'true'}"
+                  title="إظهار / إخفاء الأذكار" aria-label="إظهار أو إخفاء الأذكار">▲</button>
         </div>
+        <div class="sub-dhikr-container ${compact ? '' : 'show'}" id="subc-${item.id}">${subsHtml}</div>
       `;
+
+      card.querySelector('.dhikr-info-icon').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDhikrModal(item.id);
+      });
+      card.querySelector('.dhikr-expand-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSubDhikr(item.id);
+      });
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.sub-dhikr-item')) return;
+        if (e.target.closest('.dhikr-info-icon, .dhikr-expand-btn')) return;
+        if (_hasTextSelection()) return;
+        toggleSubDhikr(item.id);
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        if (e.target.closest('.dhikr-info-icon, .dhikr-expand-btn')) return;
+        e.preventDefault();
+        toggleSubDhikr(item.id);
+      });
+
+      card.querySelectorAll('.sub-dhikr-item').forEach(row => {
+        const subId = row.dataset.sub;
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (_hasTextSelection()) return;
+          decrementSubCount(item.id, subId);
+        });
+        row.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          decrementSubCount(item.id, subId);
+        });
+      });
+
+      container.appendChild(card);
+      return;
     }
 
+    // ── Single dhikr ──
+    const left = state[item.id];
+    const isFinished = left <= 0;
+
     const card = document.createElement('div');
-    card.className = `dhikr-card ${isFinished ? 'completed' : ''}`;
-    card.id = `card-${item.id}`;
-    card.innerHTML = cardHtml;
+    card.className = 'dhikr-card' + (isFinished ? ' completed' : '');
+    card.id = 'card-' + item.id;
+    card.dataset.dhikr = item.id;
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
+    card.setAttribute('aria-label', (isFinished ? 'تم' : 'باقي ' + _toAr(left) + ' من ' + _toAr(item.count)) + ' — اضغط للعد');
+    card.innerHTML = `
+      <div class="dhikr-text">${item.text}</div>
+      <div class="dhikr-footer">
+        <button class="dhikr-info-icon" type="button" title="معلومات الفضل" aria-label="فضل الذكر">؟</button>
+        ${_meterHtml(item.id, left, item.count)}
+      </div>
+    `;
+
+    card.querySelector('.dhikr-info-icon').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDhikrModal(item.id);
+    });
+
+    card.addEventListener('click', () => {
+      if (_hasTextSelection()) return;
+      decrementCount(item.id);
+    });
+
+    card.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target.closest('.dhikr-info-icon')) return;
+      e.preventDefault();
+      decrementCount(item.id);
+    });
 
     container.appendChild(card);
   });
 }
 
+function _setMeter(id, remaining, total) {
+  const bar = document.getElementById('bar-' + id);
+  const pill = document.getElementById('count-' + id);
+  const done = total > 0 ? total - remaining : 0;
+  const pct = total > 0 ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0;
+
+  if (bar) bar.style.width = pct + '%';
+
+  if (pill) {
+    pill.textContent = _pillText(remaining);
+    pill.classList.toggle('done', remaining <= 0);
+    pill.classList.remove('pop');
+    void pill.offsetWidth;
+    pill.classList.add('pop');
+  }
+
+  // Keep screen-reader state in sync with the visible count
+  const card = document.getElementById('card-' + id);
+  if (card && card.dataset.group !== '1') {
+    card.setAttribute('aria-label',
+      (remaining <= 0 ? 'تم' : 'باقي ' + _toAr(remaining) + ' من ' + _toAr(total)) + ' — اضغط للعد');
+  }
+  const row = document.getElementById('subrow-' + id);
+  if (row) {
+    row.setAttribute('aria-label',
+      remaining <= 0 ? 'تم' : 'باقي ' + _toAr(remaining) + ' من ' + _toAr(total));
+  }
+}
+
 function decrementCount(dhikrId) {
+  const item = (ADHIKAR_DB[currentCategory] || []).find(d => d.id === dhikrId);
+  if (!item) return;
+
   const currentCount = dhikrState[currentCategory][dhikrId];
   if (currentCount <= 0) return; // already done
 
   const newCount = currentCount - 1;
   dhikrState[currentCategory][dhikrId] = newCount;
 
-  const circle = document.getElementById(`count-${dhikrId}`);
-  const card = document.getElementById(`card-${dhikrId}`);
-
-  // Animation effect
-  circle.style.transform = 'scale(0.85)';
-  setTimeout(() => circle.style.transform = '', 150);
+  _setMeter(dhikrId, newCount, item.count);
+  _vibrate();
 
   if (newCount <= 0) {
-    circle.innerHTML = '✓';
-    circle.classList.add('finished');
-    card.classList.add('completed');
+    const card = document.getElementById(`card-${dhikrId}`);
+    if (card) card.classList.add('completed');
     checkTabCompletion(currentCategory);
-  } else {
-    circle.innerHTML = newCount;
   }
 }
 
 function toggleSubDhikr(parentId) {
   const container = document.getElementById(`subc-${parentId}`);
   const btn = document.getElementById(`expand-${parentId}`);
-  if (container.classList.contains('show')) {
-    container.classList.remove('show');
-    btn.innerHTML = '▼';
-  } else {
-    container.classList.add('show');
-    btn.innerHTML = '▲';
+  if (!container) return;
+
+  const isOpen = container.classList.contains('show');
+  container.classList.toggle('show', !isOpen);
+
+  if (btn) {
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
   }
 }
 
 function decrementSubCount(parentId, subId) {
+  const item = (ADHIKAR_DB[currentCategory] || []).find(d => d.id === parentId);
+  if (!item || !item.subDhikrs) return;
+
+  const sub = item.subDhikrs.find(s => s.id === subId);
+  if (!sub) return;
+
   const currentCount = dhikrState[currentCategory][subId];
   if (currentCount <= 0) return; // already done
 
   const newCount = currentCount - 1;
   dhikrState[currentCategory][subId] = newCount;
 
-  const circle = document.getElementById(`count-${subId}`);
-
-  // Animation effect
-  circle.style.transform = 'scale(0.85)';
-  setTimeout(() => circle.style.transform = '', 150);
+  _setMeter(subId, newCount, sub.count);
+  _vibrate();
 
   if (newCount <= 0) {
-    circle.innerHTML = '✓';
-    circle.classList.add('finished');
-    checkParentCompletion(parentId);
-  } else {
-    circle.innerHTML = newCount;
+    const row = document.getElementById(`subrow-${subId}`);
+    if (row) row.classList.add('finished');
   }
+
+  checkParentCompletion(parentId);
 }
 
 function checkParentCompletion(parentId) {
-  const item = ADHIKAR_DB[currentCategory].find(d => d.id === parentId);
+  const item = (ADHIKAR_DB[currentCategory] || []).find(d => d.id === parentId);
   if (!item || !item.subDhikrs) return;
 
-  let anyLeft = false;
+  let remaining = 0;
   item.subDhikrs.forEach(sub => {
-    if (dhikrState[currentCategory][sub.id] > 0) anyLeft = true;
+    if (dhikrState[currentCategory][sub.id] > 0) remaining++;
   });
 
-  if (!anyLeft) {
-    const card = document.getElementById(`card-${parentId}`);
-    card.classList.add('completed');
+  _setMeter(parentId, remaining, item.subDhikrs.length);
+
+  const card = document.getElementById(`card-${parentId}`);
+  if (remaining === 0) {
+    if (card) card.classList.add('completed');
     checkTabCompletion(currentCategory);
+  } else if (card) {
+    card.classList.remove('completed');
   }
 }
 
